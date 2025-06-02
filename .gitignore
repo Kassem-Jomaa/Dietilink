@@ -1,0 +1,60 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+*.tmp
+*.bak
+.DS_Store
+.atom/
+.history
+.svn/
+.build/
+.buildlog/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (تعليق السطر إذا كنت تريد رفع إعدادات VS Code الخاصة بالمشروع)
+.vscode/
+
+# Flutter / Dart / Pub
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# Android-specific build folders
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# iOS-specific
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+
+# Obfuscation and symbolication
+app.*.symbols
+app.*.map.json
+
+# Sensitive files (لا يجب رفعها أبدًا)
+*.env
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Uncomment the next line only if you're building a PACKAGE, not an app
+# pubspec.lock

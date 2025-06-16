@@ -1,17 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'routes/app_pages.dart';
+import 'core/theme/app_theme.dart';
+import 'core/services/api_service.dart';
+import 'modules/auth/controllers/auth_controller.dart';
 
-void main() {
-  runApp(const MyApp ());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize services
+  await Get.putAsync(() => ApiService().init());
+
+  // Initialize controllers
+  Get.put(AuthController(), permanent: true);
+
+  runApp(const DietiLinkApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class DietiLinkApp extends StatelessWidget {
+  const DietiLinkApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(),
+    return GetMaterialApp(
+      title: 'DietiLink',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      initialRoute: AppPages.INITIAL,
+      getPages: AppPages.routes,
+      defaultTransition: Transition.fade,
+      transitionDuration: const Duration(milliseconds: 300),
     );
   }
 }

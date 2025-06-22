@@ -25,7 +25,7 @@ class EditProfileView extends GetView<ProfileController> {
     final profile = controller.profile.value;
     if (profile != null) {
       nameController.text = profile.user.name;
-      emailController.text = profile.user.email;
+      emailController.text = profile.user.email ?? '';
       phoneController.text = profile.patient.phone ?? '';
       occupationController.text = profile.patient.occupation ?? '';
       heightController.text = profile.patient.height?.toString() ?? '';

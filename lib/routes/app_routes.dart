@@ -7,4 +7,7 @@ abstract class Routes {
   static const PROFILE = '/profile';
   static const EDIT_PROFILE = '/profile/edit';
   static const CHANGE_PASSWORD = '/profile/change-password';
+  static const PROGRESS = '/progress';
+  static const PROGRESS_HISTORY = '/progress/history';
+  static const ADD_PROGRESS = '/progress/add';
 }

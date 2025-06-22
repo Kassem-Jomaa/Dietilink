@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../core/services/api_service.dart';
 import '../models/profile_model.dart';
+import '../../auth/models/user_model.dart';
 
 class ProfileController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
@@ -18,26 +19,74 @@ class ProfileController extends GetxController {
   }
 
   Future<void> loadProfile() async {
+    Map<String, dynamic>? response;
     try {
       isLoading.value = true;
       errorMessage.value = '';
       validationErrors.clear();
 
       print('\n👤 Loading profile...');
-      final response = await _apiService.get('/profile');
-      print('Profile Response: ${response.data}');
+      response = await _apiService.get('/profile');
+      print('Profile Response: $response');
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        profile.value = ProfileModel.fromJson(response.data['data']);
+      try {
+        print('🔍 Parsing user data...');
+        final userData = response['data']['user'];
+        print('User data: $userData');
+
+        // Test UserModel parsing first
+        print('🔍 Testing UserModel parsing...');
+        final testUser = UserModel.fromJson(userData);
+        print('✅ UserModel parsed successfully: ${testUser.name}');
+
+        print('🔍 Parsing patient data...');
+        final patientData = response['data']['patient'];
+        print('Patient data: $patientData');
+
+        // Test PatientModel parsing
+        print('🔍 Testing PatientModel parsing...');
+        final testPatient = PatientModel.fromJson(patientData);
+        print('✅ PatientModel parsed successfully');
+
+        profile.value = ProfileModel.fromJson(response['data']);
         print('✅ Profile loaded successfully');
-      } else {
-        print('❌ Failed to load profile');
-        errorMessage.value =
-            response.data['message'] ?? 'Failed to load profile';
+        print('User Name: ${profile.value?.user.name}');
+        print('User Email: ${profile.value?.user.email}');
+        print('Patient Phone: ${profile.value?.patient.phone}');
+        print('Patient Gender: ${profile.value?.patient.gender}');
+      } catch (parseError) {
+        print('❌ Parse error: $parseError');
+        print('❌ Parse error type: ${parseError.runtimeType}');
+        print('❌ Stack trace: ${parseError.toString()}');
+        rethrow;
       }
     } catch (e) {
       print('❌ Error loading profile: $e');
       errorMessage.value = 'An error occurred while loading profile';
+
+      // Create a basic profile with available data to show something
+      if (response != null) {
+        try {
+          final userData = response['data']['user'];
+          final basicProfile = ProfileModel(
+            user: UserModel.fromJson(userData),
+            patient: PatientModel(
+              phone: response['data']['patient']['phone']?.toString(),
+              gender: response['data']['patient']['gender'],
+              age: response['data']['patient']['age'],
+              occupation: response['data']['patient']['occupation'],
+              createdAt: null,
+              updatedAt: null,
+            ),
+            bmi: null,
+          );
+          profile.value = basicProfile;
+          errorMessage.value = ''; // Clear error since we have basic data
+          print('✅ Basic profile created successfully');
+        } catch (basicError) {
+          print('❌ Could not create basic profile: $basicError');
+        }
+      }
     } finally {
       isLoading.value = false;
     }
@@ -53,23 +102,11 @@ class ProfileController extends GetxController {
       print('Update data: $data');
 
       final response = await _apiService.put('/profile', data: data);
-      print('Update Response: ${response.data}');
+      print('Update Response: $response');
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        profile.value = ProfileModel.fromJson(response.data['data']);
-        print('✅ Profile updated successfully');
-        return true;
-      } else {
-        print('❌ Failed to update profile');
-        if (response.data['errors'] != null) {
-          validationErrors.value = Map<String, List<String>>.from(response
-              .data['errors']
-              .map((key, value) => MapEntry(key, List<String>.from(value))));
-        }
-        errorMessage.value =
-            response.data['message'] ?? 'Failed to update profile';
-        return false;
-      }
+      profile.value = ProfileModel.fromJson(response['data']);
+      print('✅ Profile updated successfully');
+      return true;
     } catch (e) {
       print('❌ Error updating profile: $e');
       errorMessage.value = 'An error occurred while updating profile';
@@ -95,22 +132,10 @@ class ProfileController extends GetxController {
         'new_password': newPassword,
         'new_password_confirmation': newPasswordConfirmation,
       });
-      print('Password Change Response: ${response.data}');
+      print('Password Change Response: $response');
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        print('✅ Password changed successfully');
-        return true;
-      } else {
-        print('❌ Failed to change password');
-        if (response.data['errors'] != null) {
-          validationErrors.value = Map<String, List<String>>.from(response
-              .data['errors']
-              .map((key, value) => MapEntry(key, List<String>.from(value))));
-        }
-        errorMessage.value =
-            response.data['message'] ?? 'Failed to change password';
-        return false;
-      }
+      print('✅ Password changed successfully');
+      return true;
     } catch (e) {
       print('❌ Error changing password: $e');
       errorMessage.value = 'An error occurred while changing password';
@@ -124,21 +149,15 @@ class ProfileController extends GetxController {
     try {
       print('\n📊 Loading BMI data...');
       final response = await _apiService.get('/bmi');
-      print('BMI Response: ${response.data}');
+      print('BMI Response: $response');
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        if (profile.value != null) {
-          profile.value = ProfileModel(
-            user: profile.value!.user,
-            patient: profile.value!.patient,
-            bmi: BmiModel.fromJson(response.data['data']),
-          );
-          print('✅ BMI data loaded successfully');
-        }
-      } else {
-        print('❌ Failed to load BMI data');
-        errorMessage.value =
-            response.data['message'] ?? 'Failed to load BMI data';
+      if (profile.value != null) {
+        profile.value = ProfileModel(
+          user: profile.value!.user,
+          patient: profile.value!.patient,
+          bmi: BmiModel.fromJson(response['data']),
+        );
+        print('✅ BMI data loaded successfully');
       }
     } catch (e) {
       print('❌ Error loading BMI data: $e');

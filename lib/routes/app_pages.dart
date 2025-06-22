@@ -7,6 +7,10 @@ import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/profile/views/edit_profile_view.dart';
 import '../modules/profile/views/change_password_view.dart';
+import '../modules/progress/bindings/progress_binding.dart';
+import '../modules/progress/views/progress_view.dart';
+import '../modules/progress/views/progress_history_view.dart';
+import '../modules/progress/views/add_progress_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 
@@ -45,6 +49,21 @@ class AppPages {
       name: Routes.CHANGE_PASSWORD,
       page: () => const ChangePasswordView(),
       binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: Routes.PROGRESS,
+      page: () => const ProgressView(),
+      binding: ProgressBinding(),
+    ),
+    GetPage(
+      name: Routes.PROGRESS_HISTORY,
+      page: () => const ProgressHistoryView(),
+      binding: ProgressBinding(),
+    ),
+    GetPage(
+      name: Routes.ADD_PROGRESS,
+      page: () => const AddProgressView(),
+      binding: ProgressBinding(),
     ),
   ];
 }

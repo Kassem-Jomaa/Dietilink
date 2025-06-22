@@ -3,19 +3,19 @@ import '../../auth/models/user_model.dart';
 class ProfileModel {
   final UserModel user;
   final PatientModel patient;
-  final BmiModel bmi;
+  final BmiModel? bmi;
 
   ProfileModel({
     required this.user,
     required this.patient,
-    required this.bmi,
+    this.bmi,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
       user: UserModel.fromJson(json['user']),
       patient: PatientModel.fromJson(json['patient']),
-      bmi: BmiModel.fromJson(json['bmi']),
+      bmi: json['bmi'] != null ? BmiModel.fromJson(json['bmi']) : null,
     );
   }
 
@@ -23,54 +23,7 @@ class ProfileModel {
     return {
       'user': user.toJson(),
       'patient': patient.toJson(),
-      'bmi': bmi.toJson(),
-    };
-  }
-}
-
-class UserModel {
-  final int id;
-  final String name;
-  final String username;
-  final String email;
-  final String? role;
-  final String? status;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
-
-  UserModel({
-    required this.id,
-    required this.name,
-    required this.username,
-    required this.email,
-    this.role,
-    this.status,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'],
-      name: json['name'],
-      username: json['username'],
-      email: json['email'],
-      role: json['role'],
-      status: json['status'],
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
-          : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'email': email,
-      'status': status,
+      'bmi': bmi?.toJson(),
     };
   }
 }
@@ -103,8 +56,8 @@ class PatientModel {
   final String? subscriptionReason;
   final String? notes;
   final Map<String, dynamic>? additionalInfo;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   PatientModel({
     this.phone,
@@ -134,13 +87,13 @@ class PatientModel {
     this.subscriptionReason,
     this.notes,
     this.additionalInfo,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory PatientModel.fromJson(Map<String, dynamic> json) {
     return PatientModel(
-      phone: json['phone'],
+      phone: json['phone']?.toString(),
       gender: json['gender'],
       birthDate: json['birth_date'] != null
           ? DateTime.parse(json['birth_date'])
@@ -151,27 +104,48 @@ class PatientModel {
       initialWeight: json['initial_weight']?.toDouble(),
       goalWeight: json['goal_weight']?.toDouble(),
       activityLevel: json['activity_level'],
-      medicalConditions: List<String>.from(json['medical_conditions'] ?? []),
-      allergies: List<String>.from(json['allergies'] ?? []),
-      medications: List<String>.from(json['medications'] ?? []),
-      surgeries: List<String>.from(json['surgeries'] ?? []),
+      medicalConditions: json['medical_conditions'] != null
+          ? List<String>.from(json['medical_conditions'])
+          : null,
+      allergies: json['allergies'] != null
+          ? List<String>.from(json['allergies'])
+          : null,
+      medications: json['medications'] != null
+          ? List<String>.from(json['medications'])
+          : null,
+      surgeries: json['surgeries'] != null
+          ? List<String>.from(json['surgeries'])
+          : null,
       smokingStatus: json['smoking_status'],
-      giSymptoms: List<String>.from(json['gi_symptoms'] ?? []),
+      giSymptoms: json['gi_symptoms'] != null
+          ? List<String>.from(json['gi_symptoms'])
+          : null,
       recentBloodTest: json['recent_blood_test'],
-      dietaryPreferences: List<String>.from(json['dietary_preferences'] ?? []),
+      dietaryPreferences: json['dietary_preferences'] != null
+          ? List<String>.from(json['dietary_preferences'])
+          : null,
       alcoholIntake: json['alcohol_intake'],
       coffeeIntake: json['coffee_intake'],
-      vitaminIntake: List<String>.from(json['vitamin_intake'] ?? []),
+      vitaminIntake: json['vitamin_intake'] != null
+          ? List<String>.from(json['vitamin_intake'])
+          : null,
       dailyRoutine: json['daily_routine'],
       physicalActivityDetails: json['physical_activity_details'],
-      previousDiets: List<String>.from(json['previous_diets'] ?? []),
-      weightHistory:
-          List<Map<String, dynamic>>.from(json['weight_history'] ?? []),
+      previousDiets: json['previous_diets'] != null
+          ? List<String>.from(json['previous_diets'])
+          : null,
+      weightHistory: json['weight_history'] != null
+          ? List<Map<String, dynamic>>.from(json['weight_history'])
+          : null,
       subscriptionReason: json['subscription_reason'],
       notes: json['notes'],
       additionalInfo: json['additional_info'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : null,
     );
   }
 

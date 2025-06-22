@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
 import '../models/profile_model.dart';
+import '../../auth/models/user_model.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../../core/widgets/error_message.dart';
@@ -52,9 +53,16 @@ class ProfileView extends GetView<ProfileController> {
         }
 
         if (controller.errorMessage.isNotEmpty) {
-          return ErrorMessage(
-            message: controller.errorMessage.value,
-            onRetry: controller.loadProfile,
+          return Column(
+            children: [
+              ErrorMessage(
+                message: controller.errorMessage.value,
+                onRetry: controller.loadProfile,
+              ),
+              const SizedBox(height: 16),
+              const Text('Showing basic profile data:'),
+              const SizedBox(height: 16),
+            ],
           );
         }
 
@@ -63,18 +71,58 @@ class ProfileView extends GetView<ProfileController> {
           return const Center(child: Text('No profile data available'));
         }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildUserInfo(profile.user),
-              const SizedBox(height: 24),
-              _buildBmiCard(profile.bmi),
-              const SizedBox(height: 24),
-              _buildPatientInfo(profile.patient),
-            ],
-          ),
+        return Column(
+          children: [
+            // User Info Section (Always visible)
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildUserInfo(profile.user),
+                  const SizedBox(height: 16),
+                  _buildBmiCard(profile.bmi),
+                ],
+              ),
+            ),
+            // Tabbed Content
+            Expanded(
+              child: DefaultTabController(
+                length: 3,
+                child: Column(
+                  children: [
+                    TabBar(
+                      labelColor: AppTheme.violetBlue,
+                      unselectedLabelColor: AppTheme.textMuted,
+                      indicatorColor: AppTheme.violetBlue,
+                      tabs: const [
+                        Tab(
+                          icon: Icon(Icons.person),
+                          text: 'Basic Info',
+                        ),
+                        Tab(
+                          icon: Icon(Icons.medical_services),
+                          text: 'Medical',
+                        ),
+                        Tab(
+                          icon: Icon(Icons.restaurant),
+                          text: 'Food History',
+                        ),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildBasicInfoTab(profile.patient),
+                          _buildMedicalTab(profile.patient),
+                          _buildFoodHistoryTab(profile.patient),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         );
       }),
     );
@@ -129,15 +177,15 @@ class ProfileView extends GetView<ProfileController> {
             ),
             const SizedBox(height: 24),
             _buildInfoRow('Username', user.username),
-            _buildInfoRow('Email', user.email),
-            if (user.status != null) _buildInfoRow('Status', user.status!),
+            if (user.email != null) _buildInfoRow('Email', user.email!),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBmiCard(BmiModel bmi) {
+  Widget _buildBmiCard(BmiModel? bmi) {
+    if (bmi == null) return const SizedBox.shrink();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -352,5 +400,225 @@ class ProfileView extends GetView<ProfileController> {
       default:
         return AppTheme.primaryAccent;
     }
+  }
+
+  Widget _buildBasicInfoTab(PatientModel patient) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Personal Information'),
+          const SizedBox(height: 16),
+          if (patient.phone != null) _buildInfoRow('Phone', patient.phone!),
+          if (patient.gender != null) _buildInfoRow('Gender', patient.gender!),
+          if (patient.birthDate != null)
+            _buildInfoRow(
+                'Birth Date', patient.birthDate!.toString().split(' ')[0]),
+          if (patient.age != null) _buildInfoRow('Age', patient.age.toString()),
+          if (patient.occupation != null)
+            _buildInfoRow('Occupation', patient.occupation!),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Physical Information'),
+          const SizedBox(height: 16),
+          if (patient.height != null)
+            _buildInfoRow('Height', '${patient.height} cm'),
+          if (patient.initialWeight != null)
+            _buildInfoRow('Initial Weight', '${patient.initialWeight} kg'),
+          if (patient.goalWeight != null)
+            _buildInfoRow('Goal Weight', '${patient.goalWeight} kg'),
+          if (patient.activityLevel != null)
+            _buildInfoRow('Activity Level', patient.activityLevel!),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Additional Information'),
+          const SizedBox(height: 16),
+          if (patient.subscriptionReason != null)
+            _buildInfoRow('Subscription Reason', patient.subscriptionReason!),
+          if (patient.notes != null) _buildInfoRow('Notes', patient.notes!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicalTab(PatientModel patient) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Medical Conditions'),
+          const SizedBox(height: 16),
+          if (patient.medicalConditions?.isNotEmpty ?? false)
+            _buildListInfo('Medical Conditions', patient.medicalConditions!)
+          else
+            _buildEmptyInfo('No medical conditions recorded'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Allergies & Medications'),
+          const SizedBox(height: 16),
+          if (patient.allergies?.isNotEmpty ?? false)
+            _buildListInfo('Allergies', patient.allergies!)
+          else
+            _buildEmptyInfo('No allergies recorded'),
+          const SizedBox(height: 16),
+          if (patient.medications?.isNotEmpty ?? false)
+            _buildListInfo('Medications', patient.medications!)
+          else
+            _buildEmptyInfo('No medications recorded'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Medical History'),
+          const SizedBox(height: 16),
+          if (patient.surgeries?.isNotEmpty ?? false)
+            _buildListInfo('Surgeries', patient.surgeries!)
+          else
+            _buildEmptyInfo('No surgeries recorded'),
+          const SizedBox(height: 16),
+          if (patient.smokingStatus != null)
+            _buildInfoRow('Smoking Status', patient.smokingStatus!)
+          else
+            _buildEmptyInfo('Smoking status not specified'),
+          const SizedBox(height: 16),
+          if (patient.recentBloodTest != null)
+            _buildInfoRow('Recent Blood Test', patient.recentBloodTest!)
+          else
+            _buildEmptyInfo('No recent blood test recorded'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Symptoms'),
+          const SizedBox(height: 16),
+          if (patient.giSymptoms?.isNotEmpty ?? false)
+            _buildListInfo('GI Symptoms', patient.giSymptoms!)
+          else
+            _buildEmptyInfo('No GI symptoms recorded'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoodHistoryTab(PatientModel patient) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Dietary Preferences'),
+          const SizedBox(height: 16),
+          if (patient.dietaryPreferences?.isNotEmpty ?? false)
+            _buildListInfo('Dietary Preferences', patient.dietaryPreferences!)
+          else
+            _buildEmptyInfo('No dietary preferences recorded'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Consumption Habits'),
+          const SizedBox(height: 16),
+          if (patient.alcoholIntake != null)
+            _buildInfoRow('Alcohol Intake', patient.alcoholIntake!)
+          else
+            _buildEmptyInfo('Alcohol intake not specified'),
+          const SizedBox(height: 16),
+          if (patient.coffeeIntake != null)
+            _buildInfoRow('Coffee Intake', patient.coffeeIntake!)
+          else
+            _buildEmptyInfo('Coffee intake not specified'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Supplements'),
+          const SizedBox(height: 16),
+          if (patient.vitaminIntake?.isNotEmpty ?? false)
+            _buildListInfo('Vitamin Intake', patient.vitaminIntake!)
+          else
+            _buildEmptyInfo('No vitamin intake recorded'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Diet History'),
+          const SizedBox(height: 16),
+          if (patient.previousDiets?.isNotEmpty ?? false)
+            _buildListInfo('Previous Diets', patient.previousDiets!)
+          else
+            _buildEmptyInfo('No previous diets recorded'),
+          const SizedBox(height: 16),
+          if (patient.weightHistory?.isNotEmpty ?? false)
+            _buildWeightHistory(patient.weightHistory!)
+          else
+            _buildEmptyInfo('No weight history recorded'),
+          const SizedBox(height: 24),
+          _buildSectionHeader('Lifestyle'),
+          const SizedBox(height: 16),
+          if (patient.dailyRoutine != null)
+            _buildInfoRow('Daily Routine', patient.dailyRoutine!)
+          else
+            _buildEmptyInfo('Daily routine not specified'),
+          const SizedBox(height: 16),
+          if (patient.physicalActivityDetails != null)
+            _buildInfoRow('Physical Activity', patient.physicalActivityDetails!)
+          else
+            _buildEmptyInfo('Physical activity not specified'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textMain,
+      ),
+    );
+  }
+
+  Widget _buildEmptyInfo(String message) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.textMuted.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: AppTheme.textMuted,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppTheme.textMuted,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeightHistory(List<Map<String, dynamic>> weightHistory) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Weight History',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textMuted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...weightHistory.map((entry) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                entry.toString(),
+                style: const TextStyle(color: AppTheme.textMain),
+              ),
+            )),
+      ],
+    );
   }
 }

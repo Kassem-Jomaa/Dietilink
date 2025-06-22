@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../routes/app_pages.dart';
 import 'chat_view.dart';
 
 class MoreView extends StatelessWidget {
@@ -58,6 +60,15 @@ class MoreView extends StatelessWidget {
                     context,
                     'Health & Fitness',
                     [
+                      _buildMenuItem(
+                        context,
+                        'Progress Tracking',
+                        'Track weight, measurements, and photos',
+                        Icons.trending_up_outlined,
+                        () {
+                          Get.toNamed(Routes.PROGRESS);
+                        },
+                      ),
                       _buildMenuItem(
                         context,
                         'Workout Tracker',

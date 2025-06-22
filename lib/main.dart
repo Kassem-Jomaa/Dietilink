@@ -25,7 +25,9 @@ class DietiLinkApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'DietiLink',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // Follows system theme preference
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       defaultTransition: Transition.fade,

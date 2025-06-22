@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  // Dark Theme Colors - Modern Dark Health Theme (Primary)
+  static const Color darkBackground = Color(0xFF0F172A);
+  static const Color darkCardBackground = Color(0xFF1E293B);
+  static const Color darkTextPrimary = Color(0xFFF1F5F9);
+  static const Color darkTextSecondary = Color(0xFFCBD5E1);
+  static const Color darkTextMuted = Color(0xFF94A3B8);
+  static const Color darkBorder = Color(0xFF334155);
+
   // Light Theme Colors - Fresh Health-focused Palette
   static const Color lightBackground = Color(0xFFF8FAFC);
   static const Color lightCardBackground = Color(0xFFFFFFFF);
@@ -8,14 +16,6 @@ class AppTheme {
   static const Color lightTextSecondary = Color(0xFF64748B);
   static const Color lightTextMuted = Color(0xFF94A3B8);
   static const Color lightBorder = Color(0xFFE2E8F0);
-
-  // Dark Theme Colors - Modern Dark Health Theme
-  static const Color darkBackground = Color(0xFF0F172A);
-  static const Color darkCardBackground = Color(0xFF1E293B);
-  static const Color darkTextPrimary = Color(0xFFF1F5F9);
-  static const Color darkTextSecondary = Color(0xFFCBD5E1);
-  static const Color darkTextMuted = Color(0xFF94A3B8);
-  static const Color darkBorder = Color(0xFF334155);
 
   // Common Colors - Health & Wellness Focused
   static const Color violetBlue = Color(0xFF059669); // Emerald Green for health
@@ -25,7 +25,7 @@ class AppTheme {
   static const Color error = Color(0xFFEF4444);
   static const Color primary = violetBlue;
 
-  // Legacy colors for backward compatibility
+  // Legacy colors for backward compatibility - Using DARK theme by default
   static const Color background = darkBackground;
   static const Color cardBackground = darkCardBackground;
   static const Color textMain = darkTextPrimary;
@@ -58,6 +58,10 @@ class AppTheme {
   static const Color good = Color(0xFF3B82F6); // Blue for good
   static const Color poor = Color(0xFFF59E0B); // Amber for poor
   static const Color veryPoor = Color(0xFFEF4444); // Red for very poor
+
+  // Avatar & Profile Colors
+  static const Color avatarBackground = Color(0xFF0EA5E9); // Avatar background
+  static const Color avatarText = Color(0xFFFFFFFF); // Avatar text
 
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,

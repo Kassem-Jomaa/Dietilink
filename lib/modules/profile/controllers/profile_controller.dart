@@ -54,6 +54,9 @@ class ProfileController extends GetxController {
         print('User Email: ${profile.value?.user.email}');
         print('Patient Phone: ${profile.value?.patient.phone}');
         print('Patient Gender: ${profile.value?.patient.gender}');
+
+        // Load BMI data after profile loads successfully
+        await loadBmi();
       } catch (parseError) {
         print('❌ Parse error: $parseError');
         print('❌ Parse error type: ${parseError.runtimeType}');
@@ -106,6 +109,10 @@ class ProfileController extends GetxController {
 
       profile.value = ProfileModel.fromJson(response['data']);
       print('✅ Profile updated successfully');
+
+      // Load BMI data after profile update
+      await loadBmi();
+
       return true;
     } catch (e) {
       print('❌ Error updating profile: $e');
@@ -151,17 +158,33 @@ class ProfileController extends GetxController {
       final response = await _apiService.get('/bmi');
       print('BMI Response: $response');
 
-      if (profile.value != null) {
+      if (profile.value != null && response['data'] != null) {
         profile.value = ProfileModel(
           user: profile.value!.user,
           patient: profile.value!.patient,
           bmi: BmiModel.fromJson(response['data']),
         );
         print('✅ BMI data loaded successfully');
+        print(
+            'BMI: ${profile.value!.bmi!.current} (${profile.value!.bmi!.category})');
+      } else {
+        print('⚠️ No BMI data available - might need height/weight in profile');
       }
     } catch (e) {
       print('❌ Error loading BMI data: $e');
-      errorMessage.value = 'An error occurred while loading BMI data';
+      print(
+          'ℹ️ BMI calculation might require height and current weight in profile');
+      // Don't set error message for BMI failure as it's not critical
     }
+  }
+
+  // Public method to refresh all profile data
+  Future<void> refreshProfile() async {
+    await loadProfile();
+  }
+
+  // Public method to manually load BMI data
+  Future<void> refreshBmi() async {
+    await loadBmi();
   }
 }

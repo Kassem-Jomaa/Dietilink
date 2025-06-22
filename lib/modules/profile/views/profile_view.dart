@@ -71,60 +71,74 @@ class ProfileView extends GetView<ProfileController> {
           return const Center(child: Text('No profile data available'));
         }
 
-        return Column(
-          children: [
-            // User Info Section (Always visible)
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildUserInfo(profile.user),
-                  const SizedBox(height: 16),
-                  _buildBmiCard(profile.bmi),
-                ],
-              ),
-            ),
-            // Tabbed Content
-            Expanded(
-              child: DefaultTabController(
-                length: 3,
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              // User Info Section
+              Container(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    TabBar(
-                      labelColor: AppTheme.violetBlue,
-                      unselectedLabelColor: AppTheme.textMuted,
-                      indicatorColor: AppTheme.violetBlue,
-                      tabs: const [
-                        Tab(
-                          icon: Icon(Icons.person),
-                          text: 'Basic Info',
-                        ),
-                        Tab(
-                          icon: Icon(Icons.medical_services),
-                          text: 'Medical',
-                        ),
-                        Tab(
-                          icon: Icon(Icons.restaurant),
-                          text: 'Food History',
-                        ),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildBasicInfoTab(profile.patient),
-                          _buildMedicalTab(profile.patient),
-                          _buildFoodHistoryTab(profile.patient),
-                        ],
-                      ),
-                    ),
+                    _buildUserInfo(profile.user),
+                    const SizedBox(height: 16),
+                    _buildBmiCard(profile.bmi),
                   ],
                 ),
               ),
-            ),
-          ],
+              // Tabbed Content with fixed height
+              SizedBox(
+                height: 600, // Fixed height for tabs to ensure proper scrolling
+                child: DefaultTabController(
+                  length: 3,
+                  child: Column(
+                    children: [
+                      TabBar(
+                        labelColor: AppTheme.violetBlue,
+                        unselectedLabelColor: AppTheme.textMuted,
+                        indicatorColor: AppTheme.violetBlue,
+                        tabs: const [
+                          Tab(
+                            icon: Icon(Icons.person),
+                            text: 'Basic Info',
+                          ),
+                          Tab(
+                            icon: Icon(Icons.medical_services),
+                            text: 'Medical',
+                          ),
+                          Tab(
+                            icon: Icon(Icons.restaurant),
+                            text: 'Food History',
+                          ),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _buildBasicInfoTab(profile.patient),
+                            _buildMedicalTab(profile.patient),
+                            _buildFoodHistoryTab(profile.patient),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       }),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showQuickActionsMenu(context);
+        },
+        backgroundColor: AppTheme.violetBlue,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        tooltip: 'Quick Actions',
+      ),
     );
   }
 
@@ -185,50 +199,118 @@ class ProfileView extends GetView<ProfileController> {
   }
 
   Widget _buildBmiCard(BmiModel? bmi) {
-    if (bmi == null) return const SizedBox.shrink();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'BMI Information',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textMain,
-              ),
-            ),
-            const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildBmiStat('Current', bmi.current.toStringAsFixed(1)),
-                _buildBmiStat('Initial', bmi.initial.toStringAsFixed(1)),
-                _buildBmiStat('Change', '${bmi.change.toStringAsFixed(1)}'),
+                const Text(
+                  'BMI Information',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+                if (bmi == null)
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () => controller.refreshBmi(),
+                    tooltip: 'Refresh BMI data',
+                  ),
               ],
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: _getBmiColor(bmi.color).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: _getBmiColor(bmi.color),
-                  width: 1,
+            if (bmi != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildBmiStat('Current', bmi.current.toStringAsFixed(1)),
+                  _buildBmiStat('Initial', bmi.initial.toStringAsFixed(1)),
+                  _buildBmiStat('Change', '${bmi.change.toStringAsFixed(1)}'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _getBmiColor(bmi.color).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _getBmiColor(bmi.color),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    bmi.category,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _getBmiColor(bmi.color),
+                    ),
+                  ),
                 ),
               ),
-              child: Text(
-                bmi.category,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: _getBmiColor(bmi.color),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.violetBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.violetBlue.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.calculate,
+                      size: 48,
+                      color: AppTheme.violetBlue.withOpacity(0.7),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'BMI data not available',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Add your height and current weight in your profile to calculate BMI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textMuted,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => Get.toNamed('/profile/edit'),
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Update Profile'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.violetBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -619,6 +701,240 @@ class ProfileView extends GetView<ProfileController> {
               ),
             )),
       ],
+    );
+  }
+
+  void _showQuickActionsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.textMuted,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Quick Actions',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textMain,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Action buttons
+              _buildActionButton(
+                icon: Icons.edit,
+                title: 'Edit Profile',
+                subtitle: 'Update your personal information',
+                onTap: () {
+                  Get.back();
+                  Get.toNamed('/profile/edit');
+                },
+              ),
+              const SizedBox(height: 12),
+
+              _buildActionButton(
+                icon: Icons.add_chart,
+                title: 'Add Progress Entry',
+                subtitle: 'Record your latest weight progress',
+                onTap: () {
+                  Get.back();
+                  Get.toNamed('/progress/add');
+                },
+              ),
+              const SizedBox(height: 12),
+
+              _buildActionButton(
+                icon: Icons.lock,
+                title: 'Change Password',
+                subtitle: 'Update your account password',
+                onTap: () {
+                  Get.back();
+                  Get.toNamed('/profile/change-password');
+                },
+              ),
+              const SizedBox(height: 12),
+
+              _buildActionButton(
+                icon: Icons.refresh,
+                title: 'Refresh Data',
+                subtitle: 'Reload profile and BMI information',
+                onTap: () {
+                  Get.back();
+                  controller.refresh();
+                },
+              ),
+              const SizedBox(height: 12),
+
+              _buildActionButton(
+                icon: Icons.calculate,
+                title: 'BMI Calculator',
+                subtitle: 'Calculate and update your BMI',
+                onTap: () {
+                  Get.back();
+                  _showBmiCalculator(context);
+                },
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.rowHover,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.textMuted.withOpacity(0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.violetBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: AppTheme.violetBlue,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textMain,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: AppTheme.textMuted,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBmiCalculator(BuildContext context) {
+    final heightController = TextEditingController();
+    final weightController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.cardBackground,
+          title: const Text(
+            'BMI Calculator',
+            style: TextStyle(color: AppTheme.textMain),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: heightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Height (cm)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Weight (kg)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final height = double.tryParse(heightController.text);
+                final weight = double.tryParse(weightController.text);
+
+                if (height != null && weight != null && height > 0) {
+                  final bmi = weight / ((height / 100) * (height / 100));
+                  Get.back();
+                  Get.snackbar(
+                    'BMI Calculated',
+                    'Your BMI is: ${bmi.toStringAsFixed(1)}',
+                    backgroundColor: AppTheme.success.withOpacity(0.1),
+                    colorText: AppTheme.success,
+                  );
+                } else {
+                  Get.snackbar(
+                    'Error',
+                    'Please enter valid height and weight values',
+                    backgroundColor: AppTheme.error.withOpacity(0.1),
+                    colorText: AppTheme.error,
+                  );
+                }
+              },
+              child: const Text('Calculate'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

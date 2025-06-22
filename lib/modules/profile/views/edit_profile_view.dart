@@ -10,353 +10,413 @@ class EditProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final phoneController = TextEditingController();
-    final occupationController = TextEditingController();
-    final heightController = TextEditingController();
-    final initialWeightController = TextEditingController();
-    final goalWeightController = TextEditingController();
-    final notesController = TextEditingController();
-    final genderController = RxString('');
-
-    // Initialize controllers with current values
-    final profile = controller.profile.value;
-    if (profile != null) {
-      nameController.text = profile.user.name;
-      emailController.text = profile.user.email ?? '';
-      phoneController.text = profile.patient.phone ?? '';
-      occupationController.text = profile.patient.occupation ?? '';
-      heightController.text = profile.patient.height?.toString() ?? '';
-      initialWeightController.text =
-          profile.patient.initialWeight?.toString() ?? '';
-      goalWeightController.text = profile.patient.goalWeight?.toString() ?? '';
-      notesController.text = profile.patient.notes ?? '';
-      genderController.value = profile.patient.gender ?? '';
-    }
-
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-        actions: [
-          TextButton.icon(
-            icon: const Icon(Icons.lock, color: AppTheme.textMain),
-            label: const Text('Change Password',
-                style: TextStyle(color: AppTheme.textMain)),
-            onPressed: () => Get.toNamed('/profile/change-password'),
-          ),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const LoadingIndicator();
-        }
-
-        if (controller.errorMessage.isNotEmpty) {
-          return ErrorMessage(
-            message: controller.errorMessage.value,
-            onRetry: controller.loadProfile,
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: formKey,
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Edit Patient Information'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(100),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Display validation errors if any
-                if (controller.validationErrors.isNotEmpty) ...[
-                  Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: controller.validationErrors.entries
-                            .map((entry) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        entry.key
-                                            .replaceAll('_', ' ')
-                                            .capitalize!,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      ...entry.value.map((error) => Text(
-                                            '• $error',
-                                            style: const TextStyle(
-                                                color: Colors.red),
-                                          )),
-                                    ],
-                                  ),
-                                ))
-                            .toList(),
-                      ),
+                // Breadcrumb Indicators
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      _buildBreadcrumb('Personal', 0),
+                      _buildBreadcrumbArrow(),
+                      _buildBreadcrumb('Medical', 1),
+                      _buildBreadcrumbArrow(),
+                      _buildBreadcrumb('Food', 2),
+                    ],
+                  ),
+                ),
+                // Tab Bar
+                TabBar(
+                  labelColor: Colors.white,
+                  unselectedLabelColor: AppTheme.textMuted,
+                  indicator: BoxDecoration(
+                    color: AppTheme.violetBlue,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  tabs: const [
+                    Tab(
+                      icon: Icon(Icons.person),
+                      text: 'Personal Info',
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Profile Picture Section
-                Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor:
-                            AppTheme.primaryAccent.withOpacity(0.2),
-                        child: Text(
-                          nameController.text.isNotEmpty
-                              ? nameController.text[0].toUpperCase()
-                              : '?',
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryAccent,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppTheme.background,
-                              width: 2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    Tab(
+                      icon: Icon(Icons.medical_services),
+                      text: 'Medical History',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.restaurant),
+                      text: 'Food History',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return const LoadingIndicator();
+          }
 
-                // Basic Information Section
-                _buildSectionHeader('Basic Information'),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: nameController,
-                  label: 'Name',
-                  icon: Icons.person,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Name is required';
-                    }
-                    if (value.length > 255) {
-                      return 'Name must be less than 255 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: emailController,
-                  label: 'Email',
-                  icon: Icons.email,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Email is required';
-                    }
-                    if (!GetUtils.isEmail(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
+          if (controller.errorMessage.isNotEmpty) {
+            return ErrorMessage(
+              message: controller.errorMessage.value,
+              onRetry: controller.loadProfile,
+            );
+          }
 
-                // Patient Information Section
-                _buildSectionHeader('Patient Information'),
-                const SizedBox(height: 16),
-                if (profile?.patient?.phone != null)
-                  _buildTextField(
-                    controller: phoneController,
-                    label: 'Phone',
-                    icon: Icons.phone,
-                  ),
-                if (profile?.patient?.phone != null) const SizedBox(height: 16),
-                if (profile?.patient?.gender != null)
-                  Obx(() => _buildDropdownField(
-                        value: genderController.value.isEmpty
-                            ? null
-                            : genderController.value,
-                        label: 'Gender',
-                        icon: Icons.person_outline,
-                        items: const [
-                          DropdownMenuItem(value: 'male', child: Text('Male')),
-                          DropdownMenuItem(
-                              value: 'female', child: Text('Female')),
-                          DropdownMenuItem(
-                              value: 'other', child: Text('Other')),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            genderController.value = value;
-                          }
-                        },
-                      )),
-                if (profile?.patient?.gender != null)
-                  const SizedBox(height: 16),
-                if (profile?.patient?.occupation != null)
-                  _buildTextField(
-                    controller: occupationController,
-                    label: 'Occupation',
-                    icon: Icons.work,
-                  ),
-                if (profile?.patient?.occupation != null)
-                  const SizedBox(height: 16),
-                if (profile?.patient?.height != null ||
-                    profile?.patient?.initialWeight != null)
-                  Row(
-                    children: [
-                      if (profile?.patient?.height != null)
-                        Expanded(
-                          child: _buildTextField(
-                            controller: heightController,
-                            label: 'Height (cm)',
-                            icon: Icons.height,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      if (profile?.patient?.height != null &&
-                          profile?.patient?.initialWeight != null)
-                        const SizedBox(width: 16),
-                      if (profile?.patient?.initialWeight != null)
-                        Expanded(
-                          child: _buildTextField(
-                            controller: initialWeightController,
-                            label: 'Initial Weight (kg)',
-                            icon: Icons.monitor_weight,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                    ],
-                  ),
-                if (profile?.patient?.height != null ||
-                    profile?.patient?.initialWeight != null)
-                  const SizedBox(height: 16),
-                if (profile?.patient?.goalWeight != null)
-                  _buildTextField(
-                    controller: goalWeightController,
-                    label: 'Goal Weight (kg)',
-                    icon: Icons.flag,
+          return const TabBarView(
+            children: [
+              PersonalInfoTab(),
+              MedicalHistoryTab(),
+              FoodHistoryTab(),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumb(String title, int index) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.violetBlue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbArrow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Icon(
+        Icons.chevron_right,
+        color: AppTheme.textMuted,
+        size: 16,
+      ),
+    );
+  }
+}
+
+// Personal Info Tab
+class PersonalInfoTab extends StatefulWidget {
+  const PersonalInfoTab({Key? key}) : super(key: key);
+
+  @override
+  State<PersonalInfoTab> createState() => _PersonalInfoTabState();
+}
+
+class _PersonalInfoTabState extends State<PersonalInfoTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _occupationController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _initialWeightController = TextEditingController();
+  final _goalWeightController = TextEditingController();
+
+  String? _selectedGender;
+  String? _selectedActivityLevel;
+  DateTime? _selectedBirthDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  void _loadProfileData() {
+    final controller = Get.find<ProfileController>();
+    final profile = controller.profile.value;
+
+    if (profile != null) {
+      _nameController.text = profile.user.name;
+      _emailController.text = profile.user.email ?? '';
+      _phoneController.text = profile.patient.phone ?? '';
+      _occupationController.text = profile.patient.occupation ?? '';
+      _heightController.text = profile.patient.height?.toString() ?? '';
+      _initialWeightController.text =
+          profile.patient.initialWeight?.toString() ?? '';
+      _goalWeightController.text = profile.patient.goalWeight?.toString() ?? '';
+      _selectedGender = profile.patient.gender;
+      _selectedActivityLevel = profile.patient.activityLevel;
+      _selectedBirthDate = profile.patient.birthDate;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Validation Errors Display
+            GetBuilder<ProfileController>(
+              builder: (controller) {
+                if (controller.validationErrors.isNotEmpty) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error.withOpacity(0.1),
+                      border: Border.all(color: AppTheme.error),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: controller.validationErrors.entries
+                          .map((entry) => Text(
+                                '${entry.key}: ${entry.value.join(', ')}',
+                                style: const TextStyle(color: AppTheme.error),
+                              ))
+                          .toList(),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
+            // Personal Information Section
+            _buildSectionHeader('Personal Information'),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _nameController,
+              label: 'Full Name *',
+              icon: Icons.person,
+              validator: (value) {
+                if (value?.isEmpty ?? true) return 'Full name is required';
+                if (value!.length > 255)
+                  return 'Name must be less than 255 characters';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email Address *',
+              icon: Icons.email,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value?.isEmpty ?? true) return 'Email is required';
+                if (!GetUtils.isEmail(value!))
+                  return 'Please enter a valid email';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _phoneController,
+              label: 'Phone Number',
+              icon: Icons.phone,
+              keyboardType: TextInputType.phone,
+              validator: (value) {
+                if (value != null && value.isNotEmpty && value.length > 20) {
+                  return 'Phone number must be less than 20 characters';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            _buildDateField(
+              label: 'Birth Date',
+              icon: Icons.calendar_today,
+              selectedDate: _selectedBirthDate,
+              onDateSelected: (date) {
+                if (date.isAfter(DateTime.now())) {
+                  Get.snackbar('Error', 'Birth date cannot be in the future');
+                  return;
+                }
+                setState(() {
+                  _selectedBirthDate = date;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            _buildDropdownField(
+              value: _selectedGender,
+              label: 'Gender',
+              icon: Icons.person_outline,
+              items: const ['Male', 'Female', 'Other'],
+              onChanged: (value) => setState(() => _selectedGender = value),
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _occupationController,
+              label: 'Occupation',
+              icon: Icons.work,
+              validator: (value) {
+                if (value != null && value.length > 255) {
+                  return 'Occupation must be less than 255 characters';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Physical Information Section
+            _buildSectionHeader('Physical Information'),
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: _heightController,
+                    label: 'Height (cm)',
+                    icon: Icons.height,
                     keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final height = double.tryParse(value);
+                        if (height == null)
+                          return 'Please enter a valid number';
+                        if (height < 50 || height > 300)
+                          return 'Height must be between 50-300 cm';
+                      }
+                      return null;
+                    },
                   ),
-                if (profile?.patient?.goalWeight != null)
-                  const SizedBox(height: 16),
-                if (profile?.patient?.notes != null)
-                  _buildTextField(
-                    controller: notesController,
-                    label: 'Notes',
-                    icon: Icons.note,
-                    maxLines: 3,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildTextField(
+                    controller: _initialWeightController,
+                    label: 'Initial Weight (kg)',
+                    icon: Icons.monitor_weight,
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final weight = double.tryParse(value);
+                        if (weight == null)
+                          return 'Please enter a valid number';
+                        if (weight < 20 || weight > 500)
+                          return 'Weight must be between 20-500 kg';
+                      }
+                      return null;
+                    },
                   ),
-                if (profile?.patient?.notes != null) const SizedBox(height: 24),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
-                // Save Button
-                ElevatedButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      final updateData = {
-                        'name': nameController.text,
-                        'email': emailController.text,
-                      };
+            _buildTextField(
+              controller: _goalWeightController,
+              label: 'Goal Weight (kg)',
+              icon: Icons.flag,
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value != null && value.isNotEmpty) {
+                  final weight = double.tryParse(value);
+                  if (weight == null) return 'Please enter a valid number';
+                  if (weight < 20 || weight > 500)
+                    return 'Weight must be between 20-500 kg';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
 
-                      // Only add fields that have values
-                      if (phoneController.text.isNotEmpty) {
-                        updateData['phone'] = phoneController.text;
-                      }
-                      if (genderController.value.isNotEmpty) {
-                        updateData['gender'] = genderController.value;
-                      }
-                      if (occupationController.text.isNotEmpty) {
-                        updateData['occupation'] = occupationController.text;
-                      }
-                      if (heightController.text.isNotEmpty) {
-                        final height = double.tryParse(heightController.text);
-                        if (height != null) {
-                          updateData['height'] = height.toString();
-                        }
-                      }
-                      if (initialWeightController.text.isNotEmpty) {
-                        final weight =
-                            double.tryParse(initialWeightController.text);
-                        if (weight != null) {
-                          updateData['initial_weight'] = weight.toString();
-                        }
-                      }
-                      if (goalWeightController.text.isNotEmpty) {
-                        final weight =
-                            double.tryParse(goalWeightController.text);
-                        if (weight != null) {
-                          updateData['goal_weight'] = weight.toString();
-                        }
-                      }
-                      if (notesController.text.isNotEmpty) {
-                        updateData['notes'] = notesController.text;
-                      }
+            _buildDropdownField(
+              value: _selectedActivityLevel,
+              label: 'Activity Level',
+              icon: Icons.fitness_center,
+              items: const [
+                'Sedentary',
+                'Light',
+                'Moderate',
+                'Active',
+                'Very Active'
+              ],
+              onChanged: (value) =>
+                  setState(() => _selectedActivityLevel = value),
+            ),
+            const SizedBox(height: 32),
 
-                      final success =
-                          await controller.updateProfile(updateData);
-
-                      if (success) {
-                        Get.back();
-                        Get.snackbar(
-                          'Success',
-                          'Profile updated successfully',
-                          backgroundColor: AppTheme.success,
-                          colorText: Colors.white,
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            // Navigation Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Get.back(),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppTheme.textMuted),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    child: const Text('Cancel'),
                   ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _nextTab,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.violetBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Next',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        );
-      }),
+          ],
+        ),
+      ),
     );
+  }
+
+  void _nextTab() {
+    if (_formKey.currentState!.validate()) {
+      DefaultTabController.of(context)?.animateTo(1);
+    }
   }
 
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: FontWeight.bold,
         color: AppTheme.textMain,
       ),
@@ -386,7 +446,11 @@ class EditProfileView extends GetView<ProfileController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryAccent),
+          borderSide: const BorderSide(color: AppTheme.violetBlue),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.error),
         ),
         filled: true,
         fillColor: AppTheme.cardBackground,
@@ -403,7 +467,7 @@ class EditProfileView extends GetView<ProfileController> {
     required String? value,
     required String label,
     required IconData icon,
-    required List<DropdownMenuItem<String>> items,
+    required List<String> items,
     required void Function(String?)? onChanged,
   }) {
     return DropdownButtonFormField<String>(
@@ -421,17 +485,802 @@ class EditProfileView extends GetView<ProfileController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryAccent),
+          borderSide: const BorderSide(color: AppTheme.violetBlue),
         ),
         filled: true,
         fillColor: AppTheme.cardBackground,
         labelStyle: const TextStyle(color: AppTheme.textMuted),
       ),
-      items: items,
+      items: items
+          .map((item) => DropdownMenuItem(
+                value: item.toLowerCase(),
+                child: Text(item),
+              ))
+          .toList(),
       onChanged: onChanged,
       dropdownColor: AppTheme.cardBackground,
       style: const TextStyle(color: AppTheme.textMain),
-      icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textMuted),
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required IconData icon,
+    required DateTime? selectedDate,
+    required void Function(DateTime) onDateSelected,
+  }) {
+    return InkWell(
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: selectedDate ??
+              DateTime.now().subtract(const Duration(days: 365 * 25)),
+          firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
+          lastDate: DateTime.now(),
+        );
+        if (date != null) {
+          onDateSelected(date);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppTheme.border),
+          borderRadius: BorderRadius.circular(12),
+          color: AppTheme.cardBackground,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.textMuted),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                selectedDate != null
+                    ? '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}'
+                    : label,
+                style: TextStyle(
+                  color: selectedDate != null
+                      ? AppTheme.textMain
+                      : AppTheme.textMuted,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Icon(Icons.calendar_today, color: AppTheme.textMuted, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Medical History Tab
+class MedicalHistoryTab extends StatefulWidget {
+  const MedicalHistoryTab({Key? key}) : super(key: key);
+
+  @override
+  State<MedicalHistoryTab> createState() => _MedicalHistoryTabState();
+}
+
+class _MedicalHistoryTabState extends State<MedicalHistoryTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _medicalConditionsController = TextEditingController();
+  final _allergiesController = TextEditingController();
+  final _medicationsController = TextEditingController();
+  final _surgeriesController = TextEditingController();
+  final _giSymptomsController = TextEditingController();
+  final _bloodTestController = TextEditingController();
+  final _vitaminIntakeController = TextEditingController();
+
+  String? _selectedSmokingStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  void _loadProfileData() {
+    final controller = Get.find<ProfileController>();
+    final profile = controller.profile.value;
+
+    if (profile != null) {
+      _medicalConditionsController.text =
+          profile.patient.medicalConditions?.join(', ') ?? '';
+      _allergiesController.text = profile.patient.allergies?.join(', ') ?? '';
+      _medicationsController.text =
+          profile.patient.medications?.join(', ') ?? '';
+      _surgeriesController.text = profile.patient.surgeries?.join(', ') ?? '';
+      _giSymptomsController.text = profile.patient.giSymptoms?.join(', ') ?? '';
+      _bloodTestController.text = profile.patient.recentBloodTest ?? '';
+      _vitaminIntakeController.text =
+          profile.patient.vitaminIntake?.join(', ') ?? '';
+      _selectedSmokingStatus = profile.patient.smokingStatus;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader('Medical Conditions'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _medicalConditionsController,
+              label: 'Medical Conditions',
+              icon: Icons.medical_services,
+              hint: 'List any medical conditions you have...',
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader('Allergies & Medications'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _allergiesController,
+              label: 'Allergies',
+              icon: Icons.warning,
+              hint: 'List any allergies you have...',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _medicationsController,
+              label: 'Current Medications',
+              icon: Icons.medication,
+              hint: 'List your current medications...',
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader('Medical History'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _surgeriesController,
+              label: 'Previous Surgeries',
+              icon: Icons.local_hospital,
+              hint: 'List any previous surgeries...',
+            ),
+            const SizedBox(height: 16),
+
+            _buildDropdownField(
+              value: _selectedSmokingStatus,
+              label: 'Smoking Status',
+              icon: Icons.smoking_rooms,
+              items: const ['Never', 'Former', 'Current'],
+              onChanged: (value) =>
+                  setState(() => _selectedSmokingStatus = value),
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _bloodTestController,
+              label: 'Recent Blood Test Results',
+              icon: Icons.bloodtype,
+              hint: 'Enter recent blood test results...',
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader('Symptoms & Supplements'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _giSymptomsController,
+              label: 'GI Symptoms',
+              icon: Icons.sick,
+              hint: 'Describe any gastrointestinal symptoms...',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _vitaminIntakeController,
+              label: 'Vitamin/Supplement Intake',
+              icon: Icons.medical_information,
+              hint: 'List vitamins and supplements you take...',
+            ),
+            const SizedBox(height: 32),
+
+            // Navigation Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        DefaultTabController.of(context)?.animateTo(0),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppTheme.textMuted),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Previous'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _nextTab,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.violetBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Next',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _nextTab() {
+    if (_formKey.currentState!.validate()) {
+      DefaultTabController.of(context)?.animateTo(2);
+    }
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textMain,
+      ),
+    );
+  }
+
+  Widget _buildTextArea({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: 4,
+      maxLength: 2000,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppTheme.textMuted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.violetBlue),
+        ),
+        filled: true,
+        fillColor: AppTheme.cardBackground,
+        labelStyle: const TextStyle(color: AppTheme.textMuted),
+        hintStyle: TextStyle(color: AppTheme.textMuted.withOpacity(0.7)),
+      ),
+      style: const TextStyle(color: AppTheme.textMain),
+      validator: (value) {
+        if (value != null && value.length > 2000) {
+          return 'Text must be less than 2000 characters';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String? value,
+    required String label,
+    required IconData icon,
+    required List<String> items,
+    required void Function(String?)? onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppTheme.textMuted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.violetBlue),
+        ),
+        filled: true,
+        fillColor: AppTheme.cardBackground,
+        labelStyle: const TextStyle(color: AppTheme.textMuted),
+      ),
+      items: items
+          .map((item) => DropdownMenuItem(
+                value: item.toLowerCase(),
+                child: Text(item),
+              ))
+          .toList(),
+      onChanged: onChanged,
+      dropdownColor: AppTheme.cardBackground,
+      style: const TextStyle(color: AppTheme.textMain),
+    );
+  }
+}
+
+// Food History Tab
+class FoodHistoryTab extends StatefulWidget {
+  const FoodHistoryTab({Key? key}) : super(key: key);
+
+  @override
+  State<FoodHistoryTab> createState() => _FoodHistoryTabState();
+}
+
+class _FoodHistoryTabState extends State<FoodHistoryTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _dietaryPreferencesController = TextEditingController();
+  final _alcoholIntakeController = TextEditingController();
+  final _coffeeIntakeController = TextEditingController();
+  final _previousDietsController = TextEditingController();
+  final _weightHistoryController = TextEditingController();
+  final _dailyRoutineController = TextEditingController();
+  final _physicalActivityController = TextEditingController();
+  final _subscriptionReasonController = TextEditingController();
+  final _additionalNotesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  void _loadProfileData() {
+    final controller = Get.find<ProfileController>();
+    final profile = controller.profile.value;
+
+    if (profile != null) {
+      _dietaryPreferencesController.text =
+          profile.patient.dietaryPreferences?.join(', ') ?? '';
+      _alcoholIntakeController.text = profile.patient.alcoholIntake ?? '';
+      _coffeeIntakeController.text = profile.patient.coffeeIntake ?? '';
+      _previousDietsController.text =
+          profile.patient.previousDiets?.join(', ') ?? '';
+      _weightHistoryController.text =
+          profile.patient.weightHistory?.toString() ?? '';
+      _dailyRoutineController.text = profile.patient.dailyRoutine ?? '';
+      _physicalActivityController.text =
+          profile.patient.physicalActivityDetails ?? '';
+      _subscriptionReasonController.text =
+          profile.patient.subscriptionReason ?? '';
+      _additionalNotesController.text = profile.patient.notes ?? '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader('Dietary Preferences'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _dietaryPreferencesController,
+              label: 'Dietary Preferences',
+              icon: Icons.restaurant_menu,
+              hint: 'e.g., Vegetarian, Vegan, Keto, Mediterranean...',
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader('Consumption Habits'),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _alcoholIntakeController,
+              label: 'Alcohol Intake',
+              icon: Icons.local_bar,
+              hint: 'e.g., 2 glasses per week',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _coffeeIntakeController,
+              label: 'Coffee Intake',
+              icon: Icons.coffee,
+              hint: 'e.g., 3 cups per day',
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader('Diet History'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _previousDietsController,
+              label: 'Previous Diets Tried',
+              icon: Icons.history,
+              hint: 'List diets you have tried in the past...',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _weightHistoryController,
+              label: 'Weight History',
+              icon: Icons.show_chart,
+              hint: 'Describe your weight history and changes...',
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader('Lifestyle'),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _dailyRoutineController,
+              label: 'Daily Routine',
+              icon: Icons.schedule,
+              hint: 'Describe your typical daily routine...',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _physicalActivityController,
+              label: 'Physical Activity Details',
+              icon: Icons.fitness_center,
+              hint: 'Describe your physical activities and exercise...',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _subscriptionReasonController,
+              label: 'Subscription Reason',
+              icon: Icons.help,
+              hint: 'Why did you decide to join our program?',
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextArea(
+              controller: _additionalNotesController,
+              label: 'Additional Notes',
+              icon: Icons.note,
+              hint: 'Any additional information you want to share...',
+            ),
+            const SizedBox(height: 32),
+
+            // Navigation Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        DefaultTabController.of(context)?.animateTo(1),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppTheme.textMuted),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Previous'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saveAllChanges,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.violetBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Save Changes',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveAllChanges() async {
+    if (_formKey.currentState!.validate()) {
+      final controller = Get.find<ProfileController>();
+
+      // Show confirmation dialog
+      final confirmed = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text('Save Changes'),
+          content: const Text(
+              'Are you sure you want to save all changes to your profile?'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true) {
+        // Collect all data from all tabs
+        final updateData = await _collectAllFormData();
+
+        final success = await controller.updateProfile(updateData);
+
+        if (success) {
+          Get.back(); // Close edit profile screen
+          Get.snackbar(
+            'Success',
+            'Profile updated successfully',
+            backgroundColor: AppTheme.success,
+            colorText: Colors.white,
+          );
+        }
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _collectAllFormData() async {
+    // Collect data from current profile to get required fields
+    final controller = Get.find<ProfileController>();
+    final profile = controller.profile.value;
+
+    if (profile == null) {
+      throw Exception('Profile data not available');
+    }
+
+    // Start with required fields from current profile
+    final updateData = <String, dynamic>{
+      'name': profile.user.name, // Required field
+    };
+
+    // Add email only if it exists
+    if (profile.user.email != null && profile.user.email!.isNotEmpty) {
+      updateData['email'] = profile.user.email!;
+    }
+
+    // Add patient fields from current profile (maintaining existing data)
+    if (profile.patient.phone != null) {
+      updateData['phone'] = profile.patient.phone!;
+    }
+    if (profile.patient.gender != null) {
+      updateData['gender'] = profile.patient.gender!;
+    }
+    if (profile.patient.birthDate != null) {
+      // Format date as YYYY-MM-DD string
+      updateData['birth_date'] =
+          profile.patient.birthDate!.toIso8601String().split('T')[0];
+    }
+    if (profile.patient.occupation != null) {
+      updateData['occupation'] = profile.patient.occupation!;
+    }
+    if (profile.patient.height != null) {
+      updateData['height'] = profile.patient.height!;
+    }
+    if (profile.patient.initialWeight != null) {
+      updateData['initial_weight'] = profile.patient.initialWeight!;
+    }
+    if (profile.patient.goalWeight != null) {
+      updateData['goal_weight'] = profile.patient.goalWeight!;  
+    }
+    if (profile.patient.activityLevel != null) {
+      updateData['activity_level'] = profile.patient.activityLevel!;
+    }
+
+    // Add medical fields from current profile (as strings, not lists)
+    if (profile.patient.medicalConditions != null &&
+        profile.patient.medicalConditions!.isNotEmpty) {
+      updateData['medical_conditions'] =
+          profile.patient.medicalConditions!.join(', ');
+    }
+    if (profile.patient.allergies != null &&
+        profile.patient.allergies!.isNotEmpty) {
+      updateData['allergies'] = profile.patient.allergies!.join(', ');
+    }
+    if (profile.patient.medications != null &&
+        profile.patient.medications!.isNotEmpty) {
+      updateData['medications'] = profile.patient.medications!.join(', ');
+    }
+    if (profile.patient.surgeries != null &&
+        profile.patient.surgeries!.isNotEmpty) {
+      updateData['surgeries'] = profile.patient.surgeries!.join(', ');
+    }
+    if (profile.patient.smokingStatus != null) {
+      updateData['smoking_status'] = profile.patient.smokingStatus!;
+    }
+    if (profile.patient.giSymptoms != null &&
+        profile.patient.giSymptoms!.isNotEmpty) {
+      updateData['gi_symptoms'] = profile.patient.giSymptoms!.join(', ');
+    }
+    if (profile.patient.recentBloodTest != null) {
+      updateData['recent_blood_test'] = profile.patient.recentBloodTest!;
+    }
+    if (profile.patient.vitaminIntake != null &&
+        profile.patient.vitaminIntake!.isNotEmpty) {
+      updateData['vitamin_intake'] = profile.patient.vitaminIntake!.join(', ');
+    }
+    if (profile.patient.previousDiets != null &&
+        profile.patient.previousDiets!.isNotEmpty) {
+      updateData['previous_diets'] = profile.patient.previousDiets!.join(', ');
+    }
+    if (profile.patient.dietaryPreferences != null &&
+        profile.patient.dietaryPreferences!.isNotEmpty) {
+      updateData['dietary_preferences'] =
+          profile.patient.dietaryPreferences!.join(', ');
+    }
+    if (profile.patient.alcoholIntake != null) {
+      updateData['alcohol_intake'] = profile.patient.alcoholIntake!;
+    }
+    if (profile.patient.coffeeIntake != null) {
+      updateData['coffee_intake'] = profile.patient.coffeeIntake!;
+    }
+    if (profile.patient.dailyRoutine != null) {
+      updateData['daily_routine'] = profile.patient.dailyRoutine!;
+    }
+    if (profile.patient.physicalActivityDetails != null) {
+      updateData['physical_activity_details'] =
+          profile.patient.physicalActivityDetails!;
+    }
+    if (profile.patient.subscriptionReason != null) {
+      updateData['subscription_reason'] = profile.patient.subscriptionReason!;
+    }
+    if (profile.patient.notes != null) {
+      updateData['notes'] = profile.patient.notes!;
+    }
+
+    // Override with Food History tab form data if user made changes
+    if (_dietaryPreferencesController.text.isNotEmpty) {
+      updateData['dietary_preferences'] = _dietaryPreferencesController.text;
+    }
+    if (_alcoholIntakeController.text.isNotEmpty) {
+      updateData['alcohol_intake'] = _alcoholIntakeController.text;
+    }
+    if (_coffeeIntakeController.text.isNotEmpty) {
+      updateData['coffee_intake'] = _coffeeIntakeController.text;
+    }
+    if (_previousDietsController.text.isNotEmpty) {
+      updateData['previous_diets'] = _previousDietsController.text;
+    }
+    if (_weightHistoryController.text.isNotEmpty) {
+      updateData['weight_history'] = _weightHistoryController.text;
+    }
+    if (_dailyRoutineController.text.isNotEmpty) {
+      updateData['daily_routine'] = _dailyRoutineController.text;
+    }
+    if (_physicalActivityController.text.isNotEmpty) {
+      updateData['physical_activity_details'] =
+          _physicalActivityController.text;
+    }
+    if (_subscriptionReasonController.text.isNotEmpty) {
+      updateData['subscription_reason'] = _subscriptionReasonController.text;
+    }
+    if (_additionalNotesController.text.isNotEmpty) {
+      updateData['notes'] = _additionalNotesController.text;
+    }
+
+    return updateData;
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textMain,
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppTheme.textMuted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.violetBlue),
+        ),
+        filled: true,
+        fillColor: AppTheme.cardBackground,
+        labelStyle: const TextStyle(color: AppTheme.textMuted),
+        hintStyle: TextStyle(color: AppTheme.textMuted.withOpacity(0.7)),
+      ),
+      style: const TextStyle(color: AppTheme.textMain),
+      validator: (value) {
+        if (value != null && value.length > 255) {
+          return 'Text must be less than 255 characters';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildTextArea({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: 4,
+      maxLength: 2000,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppTheme.textMuted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.violetBlue),
+        ),
+        filled: true,
+        fillColor: AppTheme.cardBackground,
+        labelStyle: const TextStyle(color: AppTheme.textMuted),
+        hintStyle: TextStyle(color: AppTheme.textMuted.withOpacity(0.7)),
+      ),
+      style: const TextStyle(color: AppTheme.textMain),
+      validator: (value) {
+        if (value != null && value.length > 2000) {
+          return 'Text must be less than 2000 characters';
+        }
+        return null;
+      },
     );
   }
 }

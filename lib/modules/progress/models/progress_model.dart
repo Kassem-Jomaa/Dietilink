@@ -1,5 +1,95 @@
+// Enhanced safe parsing helper functions to handle flexible API types
+int _parseInt(dynamic value, {int defaultValue = 0}) {
+  if (value == null) return defaultValue;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    // Handle common string formats: "1", "1.0", " 1 "
+    final cleaned = value.trim();
+    if (cleaned.isEmpty) return defaultValue;
+    return int.tryParse(cleaned) ??
+        double.tryParse(cleaned)?.toInt() ??
+        defaultValue;
+  }
+  if (value is bool) return value ? 1 : 0;
+  return defaultValue;
+}
+
+int? _parseNullableInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    final cleaned = value.trim();
+    if (cleaned.isEmpty) return null;
+    return int.tryParse(cleaned) ?? double.tryParse(cleaned)?.toInt();
+  }
+  if (value is bool) return value ? 1 : 0;
+  return null;
+}
+
+double _parseDouble(dynamic value, {double defaultValue = 0.0}) {
+  if (value == null) return defaultValue;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    final cleaned = value.trim();
+    if (cleaned.isEmpty) return defaultValue;
+    return double.tryParse(cleaned) ?? defaultValue;
+  }
+  if (value is bool) return value ? 1.0 : 0.0;
+  return defaultValue;
+}
+
+double? _parseNullableDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    final cleaned = value.trim();
+    if (cleaned.isEmpty) return null;
+    return double.tryParse(cleaned);
+  }
+  if (value is bool) return value ? 1.0 : 0.0;
+  return null;
+}
+
+String _parseString(dynamic value, {String defaultValue = ''}) {
+  if (value == null) return defaultValue;
+  if (value is String) return value;
+  return value.toString();
+}
+
+String? _parseNullableString(dynamic value) {
+  if (value == null) return null;
+  if (value is String) return value.isEmpty ? null : value;
+  return value.toString();
+}
+
+// Helper for ID fields that could be string or int
+String _parseId(dynamic value, {String defaultValue = '0'}) {
+  if (value == null) return defaultValue;
+  if (value is String) return value.isEmpty ? defaultValue : value;
+  if (value is int) return value.toString();
+  if (value is double) return value.toInt().toString();
+  return value.toString();
+}
+
+// Helper for boolean fields that could be various types
+bool _parseBool(dynamic value, {bool defaultValue = false}) {
+  if (value == null) return defaultValue;
+  if (value is bool) return value;
+  if (value is String) {
+    final cleaned = value.toLowerCase().trim();
+    return cleaned == 'true' || cleaned == '1' || cleaned == 'yes';
+  }
+  if (value is int) return value != 0;
+  if (value is double) return value != 0.0;
+  return defaultValue;
+}
+
 class ProgressImage {
-  final int id;
+  final String id; // Changed to String to handle both "1" and 1 from API
   final String url;
   final String path;
 
@@ -11,19 +101,23 @@ class ProgressImage {
 
   factory ProgressImage.fromJson(Map<String, dynamic> json) {
     return ProgressImage(
-      id: json['id'],
-      url: json['url'],
-      path: json['path'],
+      id: _parseId(json['id']), // Use flexible ID parsing
+      url: _parseString(json['url']),
+      path: _parseString(json['path']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id': id, // Already a string, no conversion needed
       'url': url,
       'path': path,
     };
   }
+
+  // Helper methods for ID conversion
+  int get idAsInt => int.tryParse(id) ?? 0;
+  bool get hasValidId => id.isNotEmpty && id != '0';
 }
 
 class Measurements {
@@ -47,13 +141,13 @@ class Measurements {
 
   factory Measurements.fromJson(Map<String, dynamic> json) {
     return Measurements(
-      chest: json['chest']?.toDouble(),
-      leftArm: json['left_arm']?.toDouble(),
-      rightArm: json['right_arm']?.toDouble(),
-      waist: json['waist']?.toDouble(),
-      hips: json['hips']?.toDouble(),
-      leftThigh: json['left_thigh']?.toDouble(),
-      rightThigh: json['right_thigh']?.toDouble(),
+      chest: _parseNullableDouble(json['chest']),
+      leftArm: _parseNullableDouble(json['left_arm']),
+      rightArm: _parseNullableDouble(json['right_arm']),
+      waist: _parseNullableDouble(json['waist']),
+      hips: _parseNullableDouble(json['hips']),
+      leftThigh: _parseNullableDouble(json['left_thigh']),
+      rightThigh: _parseNullableDouble(json['right_thigh']),
     );
   }
 
@@ -81,8 +175,8 @@ class BodyComposition {
 
   factory BodyComposition.fromJson(Map<String, dynamic> json) {
     return BodyComposition(
-      fatMass: json['fat_mass']?.toDouble(),
-      muscleMass: json['muscle_mass']?.toDouble(),
+      fatMass: _parseNullableDouble(json['fat_mass']),
+      muscleMass: _parseNullableDouble(json['muscle_mass']),
     );
   }
 
@@ -95,7 +189,7 @@ class BodyComposition {
 }
 
 class ProgressEntry {
-  final int id;
+  final String id; // Changed to String for API flexibility
   final double weight;
   final String measurementDate;
   final String? notes;
@@ -119,24 +213,34 @@ class ProgressEntry {
 
   factory ProgressEntry.fromJson(Map<String, dynamic> json) {
     return ProgressEntry(
-      id: json['id'],
-      weight: json['weight'].toDouble(),
-      measurementDate: json['measurement_date'],
-      notes: json['notes'],
-      measurements: Measurements.fromJson(json['measurements'] ?? {}),
-      bodyComposition: BodyComposition.fromJson(json['body_composition'] ?? {}),
-      images: (json['images'] as List?)
-              ?.map((image) => ProgressImage.fromJson(image))
-              .toList() ??
-          [],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      id: _parseId(json['id']), // Use flexible ID parsing
+      weight: _parseDouble(json['weight'],
+          defaultValue: 0.0), // Ensure non-null with default
+      measurementDate: _parseString(json['measurement_date']),
+      notes: json['notes'] != null ? _parseString(json['notes']) : null,
+      measurements: Measurements.fromJson(
+          json['measurements'] is Map<String, dynamic>
+              ? json['measurements']
+              : {}),
+      bodyComposition: BodyComposition.fromJson(
+          json['body_composition'] is Map<String, dynamic>
+              ? json['body_composition']
+              : {}),
+      images: (json['images'] is List)
+          ? (json['images'] as List)
+              .where((item) => item is Map<String, dynamic>)
+              .map((image) =>
+                  ProgressImage.fromJson(image as Map<String, dynamic>))
+              .toList()
+          : [],
+      createdAt: _parseString(json['created_at']),
+      updatedAt: _parseString(json['updated_at']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id': id, // Already a string
       'weight': weight,
       'measurement_date': measurementDate,
       'notes': notes,
@@ -147,6 +251,10 @@ class ProgressEntry {
       'updated_at': updatedAt,
     };
   }
+
+  // Helper methods for ID conversion
+  int get idAsInt => int.tryParse(id) ?? 0;
+  bool get hasValidId => id.isNotEmpty && id != '0';
 }
 
 class ProgressPagination {
@@ -168,12 +276,13 @@ class ProgressPagination {
 
   factory ProgressPagination.fromJson(Map<String, dynamic> json) {
     return ProgressPagination(
-      currentPage: json['current_page'],
-      totalPages: json['total_pages'],
-      totalEntries: json['total_entries'],
-      perPage: json['per_page'],
-      hasNextPage: json['has_next_page'],
-      hasPreviousPage: json['has_previous_page'],
+      currentPage: _parseInt(json['current_page'], defaultValue: 1),
+      totalPages: _parseInt(json['total_pages'], defaultValue: 1),
+      totalEntries: _parseInt(json['total_entries'], defaultValue: 0),
+      perPage: _parseInt(json['per_page'], defaultValue: 20),
+      // Handle boolean values more flexibly
+      hasNextPage: _parseBool(json['has_next_page']),
+      hasPreviousPage: _parseBool(json['has_previous_page']),
     );
   }
 }
@@ -189,10 +298,15 @@ class ProgressHistory {
 
   factory ProgressHistory.fromJson(Map<String, dynamic> json) {
     return ProgressHistory(
-      progressEntries: (json['progress_entries'] as List)
-          .map((entry) => ProgressEntry.fromJson(entry))
-          .toList(),
-      pagination: ProgressPagination.fromJson(json['pagination']),
+      progressEntries: (json['progress_entries'] is List)
+          ? (json['progress_entries'] as List)
+              .where((item) => item is Map<String, dynamic>)
+              .map((entry) =>
+                  ProgressEntry.fromJson(entry as Map<String, dynamic>))
+              .toList()
+          : [],
+      pagination: ProgressPagination.fromJson(
+          json['pagination'] is Map<String, dynamic> ? json['pagination'] : {}),
     );
   }
 }
@@ -208,8 +322,8 @@ class MeasurementPeriod {
 
   factory MeasurementPeriod.fromJson(Map<String, dynamic> json) {
     return MeasurementPeriod(
-      startDate: json['start_date'],
-      endDate: json['end_date'],
+      startDate: _parseString(json['start_date']),
+      endDate: _parseString(json['end_date']),
     );
   }
 }
@@ -237,14 +351,17 @@ class ProgressStatistics {
 
   factory ProgressStatistics.fromJson(Map<String, dynamic> json) {
     return ProgressStatistics(
-      totalEntries: json['total_entries'],
-      weightChange: json['weight_change'].toDouble(),
-      initialWeight: json['initial_weight'].toDouble(),
-      currentWeight: json['current_weight'].toDouble(),
-      waistChange: json['waist_change']?.toDouble(),
-      hipsChange: json['hips_change']?.toDouble(),
-      chestChange: json['chest_change']?.toDouble(),
-      measurementPeriod: MeasurementPeriod.fromJson(json['measurement_period']),
+      totalEntries: _parseInt(json['total_entries'], defaultValue: 0),
+      weightChange: _parseDouble(json['weight_change'], defaultValue: 0.0),
+      initialWeight: _parseDouble(json['initial_weight'], defaultValue: 0.0),
+      currentWeight: _parseDouble(json['current_weight'], defaultValue: 0.0),
+      waistChange: _parseNullableDouble(json['waist_change']),
+      hipsChange: _parseNullableDouble(json['hips_change']),
+      chestChange: _parseNullableDouble(json['chest_change']),
+      measurementPeriod: MeasurementPeriod.fromJson(
+          json['measurement_period'] is Map<String, dynamic>
+              ? json['measurement_period']
+              : {}),
     );
   }
 }

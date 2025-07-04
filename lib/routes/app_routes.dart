@@ -10,4 +10,10 @@ abstract class Routes {
   static const PROGRESS = '/progress';
   static const PROGRESS_HISTORY = '/progress/history';
   static const ADD_PROGRESS = '/progress/add';
+  static const CHATBOT = '/chatbot';
+  static const APPOINTMENTS = '/appointments';
+  static const BOOK_APPOINTMENT = '/appointments/book';
+  static const APPOINTMENT_HISTORY = '/appointments/history';
+  static const APPOINTMENT_DETAIL = '/appointments/detail';
+  static const SETTINGS = '/settings';
 }

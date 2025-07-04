@@ -13,6 +13,15 @@ import '../modules/progress/views/progress_history_view.dart';
 import '../modules/progress/views/add_progress_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
+import '../modules/chatbot/bindings/chatbot_binding.dart';
+import '../modules/chatbot/views/chatbot_view.dart';
+import '../modules/appointments/bindings/appointments_binding.dart';
+import '../modules/appointments/views/appointments_view.dart';
+import '../modules/appointments/views/book_appointment_view.dart';
+import '../modules/appointments/views/appointment_history_view.dart';
+import '../modules/appointments/views/appointment_detail_view.dart';
+import '../modules/settings/bindings/settings_binding.dart';
+import '../modules/settings/views/settings_view.dart';
 
 part 'app_routes.dart';
 
@@ -64,6 +73,36 @@ class AppPages {
       name: Routes.ADD_PROGRESS,
       page: () => const AddProgressView(),
       binding: ProgressBinding(),
+    ),
+    GetPage(
+      name: Routes.CHATBOT,
+      page: () => const ChatbotView(),
+      binding: ChatbotBinding(),
+    ),
+    GetPage(
+      name: Routes.APPOINTMENTS,
+      page: () => const AppointmentsView(),
+      binding: AppointmentsBinding(),
+    ),
+    GetPage(
+      name: Routes.BOOK_APPOINTMENT,
+      page: () => const BookAppointmentView(),
+      binding: AppointmentsBinding(),
+    ),
+    GetPage(
+      name: Routes.APPOINTMENT_HISTORY,
+      page: () => const AppointmentHistoryView(),
+      binding: AppointmentsBinding(),
+    ),
+    GetPage(
+      name: Routes.APPOINTMENT_DETAIL,
+      page: () => const AppointmentDetailView(),
+      binding: AppointmentsBinding(),
+    ),
+    GetPage(
+      name: Routes.SETTINGS,
+      page: () => const SettingsView(),
+      binding: SettingsBinding(),
     ),
   ];
 }

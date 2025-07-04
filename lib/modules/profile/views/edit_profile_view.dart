@@ -10,6 +10,9 @@ class EditProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
+    // Clear any existing temp form data when entering edit mode
+    controller.clearTempFormData();
+    
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -145,6 +148,34 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
   void initState() {
     super.initState();
     _loadProfileData();
+    _setupFormListeners();
+  }
+
+  void _setupFormListeners() {
+    final controller = Get.find<ProfileController>();
+
+    _nameController.addListener(() {
+      controller.updateTempFormData('name', _nameController.text);
+    });
+    _emailController.addListener(() {
+      controller.updateTempFormData('email', _emailController.text);
+    });
+    _phoneController.addListener(() {
+      controller.updateTempFormData('phone', _phoneController.text);
+    });
+    _occupationController.addListener(() {
+      controller.updateTempFormData('occupation', _occupationController.text);
+    });
+    _heightController.addListener(() {
+      controller.updateTempFormData('height', _heightController.text);
+    });
+    _initialWeightController.addListener(() {
+      controller.updateTempFormData(
+          'initial_weight', _initialWeightController.text);
+    });
+    _goalWeightController.addListener(() {
+      controller.updateTempFormData('goal_weight', _goalWeightController.text);
+    });
   }
 
   void _loadProfileData() {
@@ -259,6 +290,9 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
                 setState(() {
                   _selectedBirthDate = date;
                 });
+                final controller = Get.find<ProfileController>();
+                controller.updateTempFormData(
+                    'birth_date', date.toIso8601String().split('T')[0]);
               },
             ),
             const SizedBox(height: 16),
@@ -268,7 +302,11 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
               label: 'Gender',
               icon: Icons.person_outline,
               items: const ['Male', 'Female', 'Other'],
-              onChanged: (value) => setState(() => _selectedGender = value),
+              onChanged: (value) {
+                setState(() => _selectedGender = value);
+                final controller = Get.find<ProfileController>();
+                controller.updateTempFormData('gender', value);
+              },
             ),
             const SizedBox(height: 16),
 
@@ -360,8 +398,11 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
                 'Active',
                 'Very Active'
               ],
-              onChanged: (value) =>
-                  setState(() => _selectedActivityLevel = value),
+              onChanged: (value) {
+                setState(() => _selectedActivityLevel = value);
+                final controller = Get.find<ProfileController>();
+                controller.updateTempFormData('activity_level', value);
+              },
             ),
             const SizedBox(height: 32),
 
@@ -578,6 +619,33 @@ class _MedicalHistoryTabState extends State<MedicalHistoryTab> {
   void initState() {
     super.initState();
     _loadProfileData();
+    _setupFormListeners();
+  }
+
+  void _setupFormListeners() {
+    final controller = Get.find<ProfileController>();
+    
+    _medicalConditionsController.addListener(() {
+      controller.updateTempFormData('medical_conditions', _medicalConditionsController.text);
+    });
+    _allergiesController.addListener(() {
+      controller.updateTempFormData('allergies', _allergiesController.text);
+    });
+    _medicationsController.addListener(() {
+      controller.updateTempFormData('medications', _medicationsController.text);
+    });
+    _surgeriesController.addListener(() {
+      controller.updateTempFormData('surgeries', _surgeriesController.text);
+    });
+    _giSymptomsController.addListener(() {
+      controller.updateTempFormData('gi_symptoms', _giSymptomsController.text);
+    });
+    _bloodTestController.addListener(() {
+      controller.updateTempFormData('recent_blood_test', _bloodTestController.text);
+    });
+    _vitaminIntakeController.addListener(() {
+      controller.updateTempFormData('vitamin_intake', _vitaminIntakeController.text);
+    });
   }
 
   void _loadProfileData() {
@@ -586,15 +654,13 @@ class _MedicalHistoryTabState extends State<MedicalHistoryTab> {
 
     if (profile != null) {
       _medicalConditionsController.text =
-          profile.patient.medicalConditions?.join(', ') ?? '';
-      _allergiesController.text = profile.patient.allergies?.join(', ') ?? '';
-      _medicationsController.text =
-          profile.patient.medications?.join(', ') ?? '';
-      _surgeriesController.text = profile.patient.surgeries?.join(', ') ?? '';
-      _giSymptomsController.text = profile.patient.giSymptoms?.join(', ') ?? '';
+          profile.patient.medicalConditions ?? '';
+      _allergiesController.text = profile.patient.allergies ?? '';
+      _medicationsController.text = profile.patient.medications ?? '';
+      _surgeriesController.text = profile.patient.surgeries ?? '';
+      _giSymptomsController.text = profile.patient.giSymptoms ?? '';
       _bloodTestController.text = profile.patient.recentBloodTest ?? '';
-      _vitaminIntakeController.text =
-          profile.patient.vitaminIntake?.join(', ') ?? '';
+      _vitaminIntakeController.text = profile.patient.vitaminIntake ?? '';
       _selectedSmokingStatus = profile.patient.smokingStatus;
     }
   }
@@ -654,8 +720,11 @@ class _MedicalHistoryTabState extends State<MedicalHistoryTab> {
               label: 'Smoking Status',
               icon: Icons.smoking_rooms,
               items: const ['Never', 'Former', 'Current'],
-              onChanged: (value) =>
-                  setState(() => _selectedSmokingStatus = value),
+              onChanged: (value) {
+                setState(() => _selectedSmokingStatus = value);
+                final controller = Get.find<ProfileController>();
+                controller.updateTempFormData('smoking_status', value);
+              },
             ),
             const SizedBox(height: 16),
 
@@ -851,6 +920,39 @@ class _FoodHistoryTabState extends State<FoodHistoryTab> {
   void initState() {
     super.initState();
     _loadProfileData();
+    _setupFormListeners();
+  }
+
+  void _setupFormListeners() {
+    final controller = Get.find<ProfileController>();
+    
+    _dietaryPreferencesController.addListener(() {
+      controller.updateTempFormData('dietary_preferences', _dietaryPreferencesController.text);
+    });
+    _alcoholIntakeController.addListener(() {
+      controller.updateTempFormData('alcohol_intake', _alcoholIntakeController.text);
+    });
+    _coffeeIntakeController.addListener(() {
+      controller.updateTempFormData('coffee_intake', _coffeeIntakeController.text);
+    });
+    _previousDietsController.addListener(() {
+      controller.updateTempFormData('previous_diets', _previousDietsController.text);
+    });
+    _weightHistoryController.addListener(() {
+      controller.updateTempFormData('weight_history', _weightHistoryController.text);
+    });
+    _dailyRoutineController.addListener(() {
+      controller.updateTempFormData('daily_routine', _dailyRoutineController.text);
+    });
+    _physicalActivityController.addListener(() {
+      controller.updateTempFormData('physical_activity_details', _physicalActivityController.text);
+    });
+    _subscriptionReasonController.addListener(() {
+      controller.updateTempFormData('subscription_reason', _subscriptionReasonController.text);
+    });
+    _additionalNotesController.addListener(() {
+      controller.updateTempFormData('notes', _additionalNotesController.text);
+    });
   }
 
   void _loadProfileData() {
@@ -859,11 +961,10 @@ class _FoodHistoryTabState extends State<FoodHistoryTab> {
 
     if (profile != null) {
       _dietaryPreferencesController.text =
-          profile.patient.dietaryPreferences?.join(', ') ?? '';
+          profile.patient.dietaryPreferences ?? '';
       _alcoholIntakeController.text = profile.patient.alcoholIntake ?? '';
       _coffeeIntakeController.text = profile.patient.coffeeIntake ?? '';
-      _previousDietsController.text =
-          profile.patient.previousDiets?.join(', ') ?? '';
+      _previousDietsController.text = profile.patient.previousDiets ?? '';
       _weightHistoryController.text =
           profile.patient.weightHistory?.toString() ?? '';
       _dailyRoutineController.text = profile.patient.dailyRoutine ?? '';
@@ -1034,8 +1135,8 @@ class _FoodHistoryTabState extends State<FoodHistoryTab> {
       );
 
       if (confirmed == true) {
-        // Collect all data from all tabs
-        final updateData = await _collectAllFormData();
+        // Collect all data from all tabs using the controller's centralized method
+        final updateData = controller.collectAllFormData();
 
         final success = await controller.updateProfile(updateData);
 
@@ -1050,147 +1151,6 @@ class _FoodHistoryTabState extends State<FoodHistoryTab> {
         }
       }
     }
-  }
-
-  Future<Map<String, dynamic>> _collectAllFormData() async {
-    // Collect data from current profile to get required fields
-    final controller = Get.find<ProfileController>();
-    final profile = controller.profile.value;
-
-    if (profile == null) {
-      throw Exception('Profile data not available');
-    }
-
-    // Start with required fields from current profile
-    final updateData = <String, dynamic>{
-      'name': profile.user.name, // Required field
-    };
-
-    // Add email only if it exists
-    if (profile.user.email != null && profile.user.email!.isNotEmpty) {
-      updateData['email'] = profile.user.email!;
-    }
-
-    // Add patient fields from current profile (maintaining existing data)
-    if (profile.patient.phone != null) {
-      updateData['phone'] = profile.patient.phone!;
-    }
-    if (profile.patient.gender != null) {
-      updateData['gender'] = profile.patient.gender!;
-    }
-    if (profile.patient.birthDate != null) {
-      // Format date as YYYY-MM-DD string
-      updateData['birth_date'] =
-          profile.patient.birthDate!.toIso8601String().split('T')[0];
-    }
-    if (profile.patient.occupation != null) {
-      updateData['occupation'] = profile.patient.occupation!;
-    }
-    if (profile.patient.height != null) {
-      updateData['height'] = profile.patient.height!;
-    }
-    if (profile.patient.initialWeight != null) {
-      updateData['initial_weight'] = profile.patient.initialWeight!;
-    }
-    if (profile.patient.goalWeight != null) {
-      updateData['goal_weight'] = profile.patient.goalWeight!;  
-    }
-    if (profile.patient.activityLevel != null) {
-      updateData['activity_level'] = profile.patient.activityLevel!;
-    }
-
-    // Add medical fields from current profile (as strings, not lists)
-    if (profile.patient.medicalConditions != null &&
-        profile.patient.medicalConditions!.isNotEmpty) {
-      updateData['medical_conditions'] =
-          profile.patient.medicalConditions!.join(', ');
-    }
-    if (profile.patient.allergies != null &&
-        profile.patient.allergies!.isNotEmpty) {
-      updateData['allergies'] = profile.patient.allergies!.join(', ');
-    }
-    if (profile.patient.medications != null &&
-        profile.patient.medications!.isNotEmpty) {
-      updateData['medications'] = profile.patient.medications!.join(', ');
-    }
-    if (profile.patient.surgeries != null &&
-        profile.patient.surgeries!.isNotEmpty) {
-      updateData['surgeries'] = profile.patient.surgeries!.join(', ');
-    }
-    if (profile.patient.smokingStatus != null) {
-      updateData['smoking_status'] = profile.patient.smokingStatus!;
-    }
-    if (profile.patient.giSymptoms != null &&
-        profile.patient.giSymptoms!.isNotEmpty) {
-      updateData['gi_symptoms'] = profile.patient.giSymptoms!.join(', ');
-    }
-    if (profile.patient.recentBloodTest != null) {
-      updateData['recent_blood_test'] = profile.patient.recentBloodTest!;
-    }
-    if (profile.patient.vitaminIntake != null &&
-        profile.patient.vitaminIntake!.isNotEmpty) {
-      updateData['vitamin_intake'] = profile.patient.vitaminIntake!.join(', ');
-    }
-    if (profile.patient.previousDiets != null &&
-        profile.patient.previousDiets!.isNotEmpty) {
-      updateData['previous_diets'] = profile.patient.previousDiets!.join(', ');
-    }
-    if (profile.patient.dietaryPreferences != null &&
-        profile.patient.dietaryPreferences!.isNotEmpty) {
-      updateData['dietary_preferences'] =
-          profile.patient.dietaryPreferences!.join(', ');
-    }
-    if (profile.patient.alcoholIntake != null) {
-      updateData['alcohol_intake'] = profile.patient.alcoholIntake!;
-    }
-    if (profile.patient.coffeeIntake != null) {
-      updateData['coffee_intake'] = profile.patient.coffeeIntake!;
-    }
-    if (profile.patient.dailyRoutine != null) {
-      updateData['daily_routine'] = profile.patient.dailyRoutine!;
-    }
-    if (profile.patient.physicalActivityDetails != null) {
-      updateData['physical_activity_details'] =
-          profile.patient.physicalActivityDetails!;
-    }
-    if (profile.patient.subscriptionReason != null) {
-      updateData['subscription_reason'] = profile.patient.subscriptionReason!;
-    }
-    if (profile.patient.notes != null) {
-      updateData['notes'] = profile.patient.notes!;
-    }
-
-    // Override with Food History tab form data if user made changes
-    if (_dietaryPreferencesController.text.isNotEmpty) {
-      updateData['dietary_preferences'] = _dietaryPreferencesController.text;
-    }
-    if (_alcoholIntakeController.text.isNotEmpty) {
-      updateData['alcohol_intake'] = _alcoholIntakeController.text;
-    }
-    if (_coffeeIntakeController.text.isNotEmpty) {
-      updateData['coffee_intake'] = _coffeeIntakeController.text;
-    }
-    if (_previousDietsController.text.isNotEmpty) {
-      updateData['previous_diets'] = _previousDietsController.text;
-    }
-    if (_weightHistoryController.text.isNotEmpty) {
-      updateData['weight_history'] = _weightHistoryController.text;
-    }
-    if (_dailyRoutineController.text.isNotEmpty) {
-      updateData['daily_routine'] = _dailyRoutineController.text;
-    }
-    if (_physicalActivityController.text.isNotEmpty) {
-      updateData['physical_activity_details'] =
-          _physicalActivityController.text;
-    }
-    if (_subscriptionReasonController.text.isNotEmpty) {
-      updateData['subscription_reason'] = _subscriptionReasonController.text;
-    }
-    if (_additionalNotesController.text.isNotEmpty) {
-      updateData['notes'] = _additionalNotesController.text;
-    }
-
-    return updateData;
   }
 
   Widget _buildSectionHeader(String title) {

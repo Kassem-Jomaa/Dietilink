@@ -36,7 +36,7 @@ class _EditProgressViewState extends State<EditProgressView> {
   late final TextEditingController _muscleMassController;
 
   late DateTime _selectedDate;
-  final List<int> _imagesToDelete = [];
+  final List<String> _imagesToDelete = [];
 
   @override
   void initState() {
@@ -767,7 +767,7 @@ class _EditProgressViewState extends State<EditProgressView> {
     }
   }
 
-  void _toggleImageDeletion(int imageId) {
+  void _toggleImageDeletion(String imageId) {
     setState(() {
       if (_imagesToDelete.contains(imageId)) {
         _imagesToDelete.remove(imageId);

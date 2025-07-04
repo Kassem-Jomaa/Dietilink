@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/theme_toggle.dart';
 import 'progress_view.dart';
 import 'more_view.dart';
-import 'chat_view.dart';
+import '../../meal_plan/views/meal_plan_view.dart';
+import '../../meal_plan/controllers/meal_plan_controller.dart';
+import '../../chatbot/views/chatbot_view.dart';
+import '../../appointments/views/appointments_view.dart';
+import '../../settings/services/theme_service.dart';
+import '../../settings/models/theme_settings.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -66,26 +73,24 @@ class _DashboardViewState extends State<DashboardView>
 
   @override
   Widget build(BuildContext context) {
+    // Initialize meal plan controller when dashboard loads
+    final mealPlanController = Get.put(MealPlanController());
+
     return Scaffold(
       body: _getCurrentView(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ChatView(),
-            ),
-          );
+          _showQuickActions(context);
         },
         backgroundColor: AppTheme.violetBlue,
-        child: const Icon(Icons.chat, color: Colors.white),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.cardBackground,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -127,50 +132,70 @@ class _DashboardViewState extends State<DashboardView>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Good morning, ${Get.find<AuthController>().currentUser.value?.name ?? 'User'}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displayMedium
+                                  ?.copyWith(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Today, ${DateTime.now().toString().split(' ')[0]}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    color: AppTheme.textMuted,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Good morning, John',
-                            style: Theme.of(context)
-                                .textTheme
-                                .displayMedium
-                                ?.copyWith(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Today, ${DateTime.now().toString().split(' ')[0]}',
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: AppTheme.textMuted,
-                                    ),
+                          // Theme Toggle Button
+                          const ThemeToggle(),
+                          const SizedBox(width: 8),
+                          // Language Toggle Button
+                          const LanguageToggle(),
+                          const SizedBox(width: 8),
+                          // User Avatar
+                          Hero(
+                            tag: 'user_avatar',
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.violetBlue
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 24,
+                                backgroundColor: AppTheme.violetBlue,
+                                child: const Icon(Icons.person,
+                                    color: Colors.white, size: 28),
+                              ),
+                            ),
                           ),
                         ],
-                      ),
-                      Hero(
-                        tag: 'user_avatar',
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.violetBlue.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            radius: 24,
-                            backgroundColor: AppTheme.violetBlue,
-                            child: const Icon(Icons.person,
-                                color: Colors.white, size: 28),
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -225,6 +250,12 @@ class _DashboardViewState extends State<DashboardView>
                   // Progress Summary Card
                   _buildProgressCard(context),
                   const SizedBox(height: 24),
+                  // Meal Plan Card
+                  _buildMealPlanCard(context),
+                  const SizedBox(height: 24),
+                  // Appointments Card
+                  _buildAppointmentsCard(context),
+                  const SizedBox(height: 24),
                   // Recent Activities
                   _buildRecentActivities(context),
                 ]),
@@ -245,7 +276,7 @@ class _DashboardViewState extends State<DashboardView>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -302,7 +333,7 @@ class _DashboardViewState extends State<DashboardView>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.violetBlue.withOpacity(0.1),
+            color: AppTheme.violetBlue.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -324,7 +355,7 @@ class _DashboardViewState extends State<DashboardView>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.violetBlue.withOpacity(0.1),
+                  color: AppTheme.violetBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -422,7 +453,7 @@ class _DashboardViewState extends State<DashboardView>
                     isCurved: true,
                     gradient: LinearGradient(
                       colors: [
-                        AppTheme.violetBlue.withOpacity(0.5),
+                        AppTheme.violetBlue.withValues(alpha: 0.5),
                         AppTheme.violetBlue,
                       ],
                     ),
@@ -443,8 +474,8 @@ class _DashboardViewState extends State<DashboardView>
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.violetBlue.withOpacity(0.2),
-                          AppTheme.violetBlue.withOpacity(0.0),
+                          AppTheme.violetBlue.withValues(alpha: 0.2),
+                          AppTheme.violetBlue.withValues(alpha: 0.0),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -456,44 +487,271 @@ class _DashboardViewState extends State<DashboardView>
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Last updated',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textMuted,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Last updated',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textMuted,
+                                  ),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '2 hours ago',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '2 hours ago',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.violetBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: Text(
+                      'View Details',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
                   ),
                 ],
-              ),
-              ElevatedButton.icon(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.violetBlue,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.arrow_forward, size: 18),
-                label: const Text('View Details'),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMealPlanCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MealPlanView(),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.tealCyan.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.tealCyan.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.restaurant_menu,
+                        color: AppTheme.tealCyan,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Meal Plan',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                          ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppTheme.textMuted,
+                  size: 16,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today\'s Nutrition',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppTheme.textMuted,
+                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'View your personalized meal plan',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textMuted,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.tealCyan.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'View',
+                    style: TextStyle(
+                      color: AppTheme.tealCyan,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppointmentsCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed('/appointments');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.skyBlue.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.skyBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.event,
+                        color: AppTheme.skyBlue,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Appointments',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                          ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppTheme.textMuted,
+                  size: 16,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Health Consultations',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppTheme.textMuted,
+                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Book and manage your appointments',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textMuted,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.skyBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Book Now',
+                    style: TextStyle(
+                      color: AppTheme.skyBlue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -530,7 +788,7 @@ class _DashboardViewState extends State<DashboardView>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.violetBlue.withOpacity(0.1),
+                      color: AppTheme.violetBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -591,7 +849,7 @@ class _DashboardViewState extends State<DashboardView>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.violetBlue.withOpacity(0.1)
+              ? AppTheme.violetBlue.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -611,6 +869,66 @@ class _DashboardViewState extends State<DashboardView>
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showQuickActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.textMuted,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.violetBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.chat, color: AppTheme.violetBlue),
+              ),
+              title: const Text('AI Chatbot'),
+              subtitle: const Text('Get nutrition advice'),
+              onTap: () {
+                Navigator.pop(context);
+                Get.toNamed('/chatbot');
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.skyBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.event, color: AppTheme.skyBlue),
+              ),
+              title: const Text('Book Appointment'),
+              subtitle: const Text('Schedule health consultation'),
+              onTap: () {
+                Navigator.pop(context);
+                Get.toNamed('/appointments/book');
+              },
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/exceptions/api_exception.dart';
 import '../models/progress_model.dart';
 
 class ProgressController extends GetxController {
@@ -48,59 +50,76 @@ class ProgressController extends GetxController {
   // Enhanced error handling
   void _handleError(dynamic error, [String? context]) {
     if (error is ApiException) {
-      // Handle different types of API errors
-      switch (error.statusCode) {
-        case 401:
-          Get.snackbar(
-            'Authentication Error',
-            'Please log in again',
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Get.theme.colorScheme.error,
-            colorText: Get.theme.colorScheme.onError,
-          );
-          // Optionally redirect to login
-          break;
-        case 403:
-          Get.snackbar(
-            'Permission Error',
-            error.message,
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Get.theme.colorScheme.error,
-            colorText: Get.theme.colorScheme.onError,
-          );
-          break;
-        case 404:
-          Get.snackbar(
-            'Not Found',
-            error.message,
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Get.theme.colorScheme.error,
-            colorText: Get.theme.colorScheme.onError,
-          );
-          break;
-        case 422:
-          _showValidationErrors(error.errors);
-          break;
-        default:
-          Get.snackbar(
-            'Error',
-            error.message,
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Get.theme.colorScheme.error,
-            colorText: Get.theme.colorScheme.onError,
-          );
+      // Handle API exceptions with enhanced logic
+      if (error.isUnauthorized) {
+        _handleAuthenticationError();
+      } else if (error.isForbidden) {
+        _showErrorSnackbar('Permission Error', error.message);
+      } else if (error.isNotFound) {
+        _showErrorSnackbar('Not Found', error.message);
+      } else if (error.isValidationError) {
+        _showValidationErrors(error.errors);
+      } else if (error.isNetworkError) {
+        _handleNetworkError(error);
+      } else {
+        _showErrorSnackbar('Error', error.message);
       }
+    } else if (error is DioException) {
+      // Handle DioException that wasn't caught by ApiService
+      _handleError(ApiException.fromDioException(error), context);
     } else {
       // Handle other types of errors
       final contextMsg = context != null ? ' while $context' : '';
-      Get.snackbar(
-        'Error',
-        'An unexpected error occurred$contextMsg: ${error.toString()}',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Get.theme.colorScheme.error,
-        colorText: Get.theme.colorScheme.onError,
+      _showErrorSnackbar(
+        'Unexpected Error',
+        'An error occurred$contextMsg. Please try again.',
       );
+
+      // Log the error for debugging
+      print('Unexpected error in ProgressController: $error');
     }
+  }
+
+  void _handleAuthenticationError() {
+    Get.snackbar(
+      'Session Expired',
+      'Please log in again',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Get.theme.colorScheme.error,
+      colorText: Get.theme.colorScheme.onError,
+      duration: const Duration(seconds: 4),
+    );
+    // Redirect to login after a short delay
+    Future.delayed(const Duration(seconds: 2), () {
+      Get.offAllNamed('/login');
+    });
+  }
+
+  void _handleNetworkError(ApiException error) {
+    String title = 'Connection Error';
+    String message = error.message;
+
+    if (error.isTimeout) {
+      title = 'Request Timeout';
+      message =
+          'The request timed out. Please check your connection and try again.';
+    } else if (error.isConnectionError) {
+      title = 'No Internet';
+      message = 'Please check your internet connection and try again.';
+    }
+
+    _showErrorSnackbar(title, message);
+  }
+
+  void _showErrorSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Get.theme.colorScheme.error,
+      colorText: Get.theme.colorScheme.onError,
+      duration: const Duration(seconds: 4),
+    );
   }
 
   // Show validation errors
@@ -185,14 +204,20 @@ class ProgressController extends GetxController {
 
   // Get latest progress entry
   Future<void> getLatestProgress() async {
+    Map<String, dynamic>? response;
     try {
       isLoading.value = true;
 
-      final response = await _apiService.get('/progress/latest');
+      response = await _apiService.get('/progress/latest');
+
+      // Debug: Print the raw response to identify the issue
+      print('🔍 Latest Progress Response: ${response['data']}');
 
       latestProgress.value =
           ProgressEntry.fromJson(response['data']['progress_entry']);
     } catch (e) {
+      print('❌ Error parsing latest progress: $e');
+      print('📊 Response data: ${response?['data']}');
       _handleError(e, 'loading latest progress');
     } finally {
       isLoading.value = false;
@@ -215,8 +240,8 @@ class ProgressController extends GetxController {
     }
   }
 
-  // Get specific progress entry
-  Future<ProgressEntry?> getProgressEntry(int id) async {
+  // Get specific progress entry (accepts both string and int IDs)
+  Future<ProgressEntry?> getProgressEntry(dynamic id) async {
     try {
       isLoading.value = true;
 
@@ -359,9 +384,9 @@ class ProgressController extends GetxController {
     return true;
   }
 
-  // Update progress entry
+  // Update progress entry (accepts both string and int IDs)
   Future<bool> updateProgressEntry({
-    required int id,
+    required dynamic id, // Changed to dynamic for flexibility
     required double weight,
     required String measurementDate,
     String? notes,
@@ -375,7 +400,7 @@ class ProgressController extends GetxController {
     double? fatMass,
     double? muscleMass,
     List<File>? newImages,
-    List<int>? deleteImageIds,
+    List<dynamic>? deleteImageIds, // Changed to dynamic for flexibility
   }) async {
     try {
       isUpdating.value = true;
@@ -404,7 +429,7 @@ class ProgressController extends GetxController {
       if (fatMass != null) formData['fat_mass'] = fatMass.toString();
       if (muscleMass != null) formData['muscle_mass'] = muscleMass.toString();
 
-      // Add image IDs to delete
+      // Add image IDs to delete (handle both string and int IDs)
       if (deleteImageIds != null && deleteImageIds.isNotEmpty) {
         for (int i = 0; i < deleteImageIds.length; i++) {
           formData['delete_images[$i]'] = deleteImageIds[i].toString();
@@ -449,7 +474,7 @@ class ProgressController extends GetxController {
   }
 
   // Delete progress entry
-  Future<bool> deleteProgressEntry(int id) async {
+  Future<bool> deleteProgressEntry(dynamic id) async {
     try {
       isDeleting.value = true;
 
@@ -474,7 +499,7 @@ class ProgressController extends GetxController {
   }
 
   // Delete progress image
-  Future<bool> deleteProgressImage(int progressId, int imageId) async {
+  Future<bool> deleteProgressImage(dynamic progressId, dynamic imageId) async {
     try {
       final response =
           await _apiService.delete('/progress/$progressId/images/$imageId');

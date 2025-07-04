@@ -352,33 +352,32 @@ class ProfileView extends GetView<ProfileController> {
             if (patient.activityLevel != null)
               _buildInfoRow('Activity Level', patient.activityLevel!),
             if (patient.medicalConditions?.isNotEmpty ?? false)
-              _buildListInfo('Medical Conditions', patient.medicalConditions!),
+              _buildInfoRow('Medical Conditions', patient.medicalConditions!),
             if (patient.allergies?.isNotEmpty ?? false)
-              _buildListInfo('Allergies', patient.allergies!),
+              _buildInfoRow('Allergies', patient.allergies!),
             if (patient.medications?.isNotEmpty ?? false)
-              _buildListInfo('Medications', patient.medications!),
+              _buildInfoRow('Medications', patient.medications!),
             if (patient.surgeries?.isNotEmpty ?? false)
-              _buildListInfo('Surgeries', patient.surgeries!),
+              _buildInfoRow('Surgeries', patient.surgeries!),
             if (patient.smokingStatus != null)
               _buildInfoRow('Smoking Status', patient.smokingStatus!),
             if (patient.giSymptoms?.isNotEmpty ?? false)
-              _buildListInfo('GI Symptoms', patient.giSymptoms!),
+              _buildInfoRow('GI Symptoms', patient.giSymptoms!),
             if (patient.dietaryPreferences?.isNotEmpty ?? false)
-              _buildListInfo(
-                  'Dietary Preferences', patient.dietaryPreferences!),
+              _buildInfoRow('Dietary Preferences', patient.dietaryPreferences!),
             if (patient.alcoholIntake != null)
               _buildInfoRow('Alcohol Intake', patient.alcoholIntake!),
             if (patient.coffeeIntake != null)
               _buildInfoRow('Coffee Intake', patient.coffeeIntake!),
             if (patient.vitaminIntake?.isNotEmpty ?? false)
-              _buildListInfo('Vitamin Intake', patient.vitaminIntake!),
+              _buildInfoRow('Vitamin Intake', patient.vitaminIntake!),
             if (patient.dailyRoutine != null)
               _buildInfoRow('Daily Routine', patient.dailyRoutine!),
             if (patient.physicalActivityDetails != null)
               _buildInfoRow(
                   'Physical Activity', patient.physicalActivityDetails!),
             if (patient.previousDiets?.isNotEmpty ?? false)
-              _buildListInfo('Previous Diets', patient.previousDiets!),
+              _buildInfoRow('Previous Diets', patient.previousDiets!),
             if (patient.subscriptionReason != null)
               _buildInfoRow('Subscription Reason', patient.subscriptionReason!),
             if (patient.notes != null) _buildInfoRow('Notes', patient.notes!),
@@ -411,35 +410,6 @@ class ProfileView extends GetView<ProfileController> {
                 color: AppTheme.textMain,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListInfo(String label, List<String> items) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textMuted,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            children: items
-                .map((item) => Chip(
-                      label: Text(item),
-                      backgroundColor: AppTheme.rowHover,
-                      labelStyle: const TextStyle(color: AppTheme.textMain),
-                    ))
-                .toList(),
           ),
         ],
       ),
@@ -531,26 +501,26 @@ class ProfileView extends GetView<ProfileController> {
           _buildSectionHeader('Medical Conditions'),
           const SizedBox(height: 16),
           if (patient.medicalConditions?.isNotEmpty ?? false)
-            _buildListInfo('Medical Conditions', patient.medicalConditions!)
+            _buildInfoRow('Medical Conditions', patient.medicalConditions!)
           else
             _buildEmptyInfo('No medical conditions recorded'),
           const SizedBox(height: 24),
           _buildSectionHeader('Allergies & Medications'),
           const SizedBox(height: 16),
           if (patient.allergies?.isNotEmpty ?? false)
-            _buildListInfo('Allergies', patient.allergies!)
+            _buildInfoRow('Allergies', patient.allergies!)
           else
             _buildEmptyInfo('No allergies recorded'),
           const SizedBox(height: 16),
           if (patient.medications?.isNotEmpty ?? false)
-            _buildListInfo('Medications', patient.medications!)
+            _buildInfoRow('Medications', patient.medications!)
           else
             _buildEmptyInfo('No medications recorded'),
           const SizedBox(height: 24),
           _buildSectionHeader('Medical History'),
           const SizedBox(height: 16),
           if (patient.surgeries?.isNotEmpty ?? false)
-            _buildListInfo('Surgeries', patient.surgeries!)
+            _buildInfoRow('Surgeries', patient.surgeries!)
           else
             _buildEmptyInfo('No surgeries recorded'),
           const SizedBox(height: 16),
@@ -567,7 +537,7 @@ class ProfileView extends GetView<ProfileController> {
           _buildSectionHeader('Symptoms'),
           const SizedBox(height: 16),
           if (patient.giSymptoms?.isNotEmpty ?? false)
-            _buildListInfo('GI Symptoms', patient.giSymptoms!)
+            _buildInfoRow('GI Symptoms', patient.giSymptoms!)
           else
             _buildEmptyInfo('No GI symptoms recorded'),
         ],
@@ -584,7 +554,7 @@ class ProfileView extends GetView<ProfileController> {
           _buildSectionHeader('Dietary Preferences'),
           const SizedBox(height: 16),
           if (patient.dietaryPreferences?.isNotEmpty ?? false)
-            _buildListInfo('Dietary Preferences', patient.dietaryPreferences!)
+            _buildInfoRow('Dietary Preferences', patient.dietaryPreferences!)
           else
             _buildEmptyInfo('No dietary preferences recorded'),
           const SizedBox(height: 24),
@@ -603,19 +573,19 @@ class ProfileView extends GetView<ProfileController> {
           _buildSectionHeader('Supplements'),
           const SizedBox(height: 16),
           if (patient.vitaminIntake?.isNotEmpty ?? false)
-            _buildListInfo('Vitamin Intake', patient.vitaminIntake!)
+            _buildInfoRow('Vitamin Intake', patient.vitaminIntake!)
           else
             _buildEmptyInfo('No vitamin intake recorded'),
           const SizedBox(height: 24),
           _buildSectionHeader('Diet History'),
           const SizedBox(height: 16),
           if (patient.previousDiets?.isNotEmpty ?? false)
-            _buildListInfo('Previous Diets', patient.previousDiets!)
+            _buildInfoRow('Previous Diets', patient.previousDiets!)
           else
             _buildEmptyInfo('No previous diets recorded'),
           const SizedBox(height: 16),
           if (patient.weightHistory?.isNotEmpty ?? false)
-            _buildWeightHistory(patient.weightHistory!)
+            _buildInfoRow('Weight History', patient.weightHistory!)
           else
             _buildEmptyInfo('No weight history recorded'),
           const SizedBox(height: 24),
@@ -673,34 +643,6 @@ class ProfileView extends GetView<ProfileController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildWeightHistory(List<Map<String, dynamic>> weightHistory) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Weight History',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textMuted,
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...weightHistory.map((entry) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                entry.toString(),
-                style: const TextStyle(color: AppTheme.textMain),
-              ),
-            )),
-      ],
     );
   }
 

@@ -2,17 +2,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' as getx;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-class ApiException implements Exception {
-  final String message;
-  final int? statusCode;
-  final Map<String, dynamic>? errors;
-
-  ApiException(this.message, {this.statusCode, this.errors});
-
-  @override
-  String toString() => message;
-}
+import '../exceptions/api_exception.dart';
+import '../../modules/progress/utils/api_response_logger.dart';
 
 class ApiService extends getx.GetxService {
   late Dio _dio;
@@ -64,14 +55,32 @@ class ApiService extends getx.GetxService {
     return this;
   }
 
-  Map<String, dynamic> _handleResponse(Response response) {
+  Map<String, dynamic> _handleResponse(Response response, [String? endpoint]) {
+    // Ensure response data is a Map
+    if (response.data is! Map<String, dynamic>) {
+      throw ApiException(
+        'Invalid response format',
+        statusCode: response.statusCode,
+      );
+    }
+
     final data = response.data as Map<String, dynamic>;
 
-    if (data['success'] == false) {
+    // Log response for type analysis (only in debug mode)
+    if (endpoint != null) {
+      data.logApiResponse(endpoint);
+      data.testCriticalFields();
+    }
+
+    // Check if the API response indicates success or failure
+    // API always returns HTTP 200, so we need to check the 'success' field
+    if (data.containsKey('success') && data['success'] == false) {
       throw ApiException(
         data['message'] ?? 'An error occurred',
         statusCode: response.statusCode,
-        errors: data['errors'],
+        errors: data['errors'] is Map<String, dynamic>
+            ? data['errors'] as Map<String, dynamic>
+            : null,
       );
     }
 
@@ -79,58 +88,15 @@ class ApiService extends getx.GetxService {
   }
 
   void _handleDioError(DioException e) {
-    if (e.response?.data != null) {
-      final data = e.response!.data as Map<String, dynamic>;
-
-      switch (e.response?.statusCode) {
-        case 401:
-          throw ApiException(
-            data['message'] ?? 'Authentication required',
-            statusCode: 401,
-          );
-        case 403:
-          throw ApiException(
-            data['message'] ?? 'Insufficient permissions',
-            statusCode: 403,
-          );
-        case 404:
-          throw ApiException(
-            data['message'] ?? 'Resource not found',
-            statusCode: 404,
-          );
-        case 422:
-          throw ApiException(
-            data['message'] ?? 'Validation failed',
-            statusCode: 422,
-            errors: data['errors'],
-          );
-        default:
-          throw ApiException(
-            data['message'] ?? 'An error occurred',
-            statusCode: e.response?.statusCode,
-            errors: data['errors'],
-          );
-      }
-    } else {
-      // Network or other errors
-      String message = 'Network error occurred';
-      if (e.type == DioExceptionType.connectionTimeout) {
-        message = 'Connection timeout';
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        message = 'Receive timeout';
-      } else if (e.type == DioExceptionType.connectionError) {
-        message = 'No internet connection';
-      }
-
-      throw ApiException(message);
-    }
+    // Use the enhanced ApiException.fromDioException factory
+    throw ApiException.fromDioException(e);
   }
 
   Future<Map<String, dynamic>> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.get(path, queryParameters: queryParameters);
-      return _handleResponse(response);
+      return _handleResponse(response, 'GET $path');
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;
@@ -140,7 +106,7 @@ class ApiService extends getx.GetxService {
   Future<Map<String, dynamic>> post(String path, {dynamic data}) async {
     try {
       final response = await _dio.post(path, data: data);
-      return _handleResponse(response);
+      return _handleResponse(response, 'POST $path');
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;
@@ -150,7 +116,7 @@ class ApiService extends getx.GetxService {
   Future<Map<String, dynamic>> put(String path, {dynamic data}) async {
     try {
       final response = await _dio.put(path, data: data);
-      return _handleResponse(response);
+      return _handleResponse(response, 'PUT $path');
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;
@@ -160,7 +126,7 @@ class ApiService extends getx.GetxService {
   Future<Map<String, dynamic>> delete(String path) async {
     try {
       final response = await _dio.delete(path);
-      return _handleResponse(response);
+      return _handleResponse(response, 'DELETE $path');
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;
@@ -201,7 +167,7 @@ class ApiService extends getx.GetxService {
         ),
       );
 
-      return _handleResponse(response);
+      return _handleResponse(response, 'POST $path');
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;
@@ -242,7 +208,7 @@ class ApiService extends getx.GetxService {
         ),
       );
 
-      return _handleResponse(response);
+      return _handleResponse(response, 'PUT $path');
     } on DioException catch (e) {
       _handleDioError(e);
       rethrow;
@@ -255,5 +221,58 @@ class ApiService extends getx.GetxService {
 
   Future<void> clearToken() async {
     await _storage.delete(key: 'auth_token');
+  }
+}
+
+/// Safe parsing utilities for handling mixed API response types
+class SafeParsing {
+  /// Parse string with fallback to empty string
+  static String parseString(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    return value.toString();
+  }
+
+  /// Parse nullable string
+  static String? parseStringNullable(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value.isEmpty ? null : value;
+    final str = value.toString();
+    return str.isEmpty ? null : str;
+  }
+
+  /// Parse int with fallback to 0
+  static int parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? 0;
+    }
+    return 0;
+  }
+
+  /// Parse double with fallback to 0.0
+  static double parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  /// Parse boolean with fallback to false
+  static bool parseBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is String) {
+      return value.toLowerCase() == 'true' || value == '1';
+    }
+    if (value is int) return value != 0;
+    return false;
   }
 }

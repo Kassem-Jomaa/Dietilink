@@ -12,6 +12,8 @@ class AuthController extends GetxController {
   final RxBool isAuthenticated = false.obs;
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
+  final RxBool isCheckingAuth =
+      false.obs; // Prevent multiple simultaneous auth checks
 
   // Test credentials
   final String testUsername = 'ahmad';
@@ -24,7 +26,14 @@ class AuthController extends GetxController {
   }
 
   Future<void> checkAuthStatus() async {
+    // Prevent multiple simultaneous auth checks
+    if (isCheckingAuth.value) {
+      print('🔍 Auth check already in progress, skipping...');
+      return;
+    }
+
     try {
+      isCheckingAuth.value = true;
       print('\n🔍 Checking auth status...');
       final token = await _storage.read(key: 'auth_token');
       print('Token exists: ${token != null}');
@@ -35,15 +44,26 @@ class AuthController extends GetxController {
           final response = await _apiService.get('/me');
           print('Profile response: $response');
 
-          final userData = response['data']['user'];
-          currentUser.value = UserModel.fromJson(userData);
-          isAuthenticated.value = true;
-          print('Auth status: true');
-          print('User: ${currentUser.value?.name}');
+          if (response.containsKey('data') && response['data'] != null) {
+            final userData = response['data']['user'];
+            if (userData != null) {
+              currentUser.value = UserModel.fromJson(userData);
+              isAuthenticated.value = true;
+              print('Auth status: true');
+              print('User: ${currentUser.value?.name}');
+            } else {
+              print('❌ No user data in response');
+              await logout(shouldNavigate: false);
+            }
+          } else {
+            print('❌ Invalid response format - no data field');
+            await logout(shouldNavigate: false);
+          }
         } catch (e) {
           print('Profile fetch error: $e');
           // If we can't fetch the profile, clear the token and logout
-          await logout();
+          // Don't navigate to login during auth check - let splash controller handle it
+          await logout(shouldNavigate: false);
         }
       } else {
         print('No token found');
@@ -52,7 +72,10 @@ class AuthController extends GetxController {
     } catch (e) {
       print('Auth check error: $e');
       isAuthenticated.value = false;
-      await logout();
+      // Don't navigate to login during auth check - let splash controller handle it
+      await logout(shouldNavigate: false);
+    } finally {
+      isCheckingAuth.value = false;
     }
   }
 
@@ -113,7 +136,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout({bool shouldNavigate = true}) async {
     try {
       await _apiService.post('/logout');
     } catch (e) {
@@ -122,7 +145,10 @@ class AuthController extends GetxController {
       await _storage.delete(key: 'auth_token');
       currentUser.value = null;
       isAuthenticated.value = false;
-      Get.offAllNamed('/login');
+      // Only navigate to login if explicitly requested
+      if (shouldNavigate) {
+        Get.offAllNamed('/login');
+      }
     }
   }
 

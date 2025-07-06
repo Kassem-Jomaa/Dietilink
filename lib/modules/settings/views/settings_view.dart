@@ -6,7 +6,7 @@ import '../controllers/settings_controller.dart';
 import '../widgets/settings_tile.dart';
 import '../widgets/settings_section.dart';
 import '../models/theme_settings.dart';
-import '../models/language_settings.dart';
+
 import '../services/theme_service.dart';
 
 class SettingsView extends StatelessWidget {
@@ -16,8 +16,6 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
     print('SettingsView: Controller found: ${controller != null}');
-    print(
-        'SettingsView: Language value: ${controller.language.value.language.displayName}');
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -154,39 +152,6 @@ class SettingsView extends StatelessWidget {
                     activeColor: AppTheme.primary,
                   ),
                 )),
-          ],
-        ),
-
-        const SizedBox(height: 24),
-
-        // Language Section
-        SettingsSection(
-          title: 'Language & Region'.tr,
-          icon: Icons.language,
-          children: [
-            SettingsTile(
-              title: 'Current Language'.tr,
-              subtitle: controller.language.value.language.displayName,
-              icon: Icons.language,
-              onTap: () {
-                print('Language tile tapped!');
-                _showLanguageSelector(controller);
-              },
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    controller.language.value.language.flagEmoji,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    color: AppTheme.textMuted,
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
 
@@ -354,87 +319,6 @@ class SettingsView extends StatelessWidget {
           }).toList(),
         );
       },
-    );
-  }
-
-  void _showLanguageSelector(SettingsController controller) {
-    print('_showLanguageSelector called!');
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: AppTheme.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.language,
-              color: AppTheme.primary,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Select Language'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: AppLanguage.values.map((AppLanguage language) {
-            final isSelected = controller.language.value.language == language;
-            return ListTile(
-              leading: Text(
-                language.flagEmoji,
-                style: const TextStyle(fontSize: 24),
-              ),
-              title: Text(
-                language.displayName,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
-                ),
-              ),
-              subtitle: Text(
-                language.nativeName,
-                style: TextStyle(
-                  color: AppTheme.textMuted,
-                  fontSize: 12,
-                ),
-              ),
-              trailing: isSelected
-                  ? Icon(
-                      Icons.check_circle,
-                      color: AppTheme.primary,
-                      size: 24,
-                    )
-                  : null,
-              onTap: () {
-                Get.back();
-                final newSettings = controller.language.value.copyWith(
-                  language: language,
-                );
-                controller.updateLanguageSettings(newSettings);
-              },
-              tileColor: isSelected
-                  ? AppTheme.primary.withOpacity(0.1)
-                  : Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'.tr),
-          ),
-        ],
-      ),
     );
   }
 

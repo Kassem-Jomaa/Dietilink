@@ -8,153 +8,189 @@ import '../../../core/theme/app_theme.dart';
 ///
 /// Displays a horizontal week view with availability indicators
 /// Shows 7 day cards with date, day name, and availability status
-class WeekCalendarWidget extends GetView<AvailabilityController> {
-  final Function(String)? onDateSelected;
+class WeekCalendarWidget extends StatelessWidget {
+  final List<DateRangeAvailability> days;
+  final bool isLoading;
+  final String? error;
+  final void Function(DateRangeAvailability)? onDateSelected;
   final bool showNavigation;
+  final AvailabilityController? controller;
 
   const WeekCalendarWidget({
     Key? key,
+    required this.days,
+    required this.isLoading,
+    this.error,
     this.onDateSelected,
     this.showNavigation = true,
+    this.controller,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     print('🔍 WeekCalendarWidget.build: Building calendar widget');
+    print('🔍 WeekCalendarWidget.build: days.length=${days.length}');
+    print('🔍 WeekCalendarWidget.build: isLoading=$isLoading');
+    print('🔍 WeekCalendarWidget.build: error=$error');
 
-    return Column(
-      children: [
-        // Week navigation header
-        if (showNavigation) _buildWeekNavigation(),
+    // Debug: Print each day's details
+    for (int i = 0; i < days.length; i++) {
+      final day = days[i];
+      print(
+          '🔍 Day $i: ${day.date} - hasAvailability=${day.hasAvailability}, availableSlots=${day.availableSlots}, totalSlots=${day.totalSlots}');
+    }
 
-        const SizedBox(height: 16),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Week navigation header
+          if (showNavigation && controller != null) _buildWeekNavigation(),
 
-        // Week calendar grid
-        Obx(() {
-          print(
-              '🔍 WeekCalendarWidget.build: Rebuilding with currentWeek=${controller.selection.value.currentWeek != null}');
-          print(
-              '🔍 WeekCalendarWidget.build: isLoadingWeek=${controller.isLoadingWeek.value}');
-          print(
-              '🔍 WeekCalendarWidget.build: weekError=${controller.weekError.value}');
+          const SizedBox(height: 20),
 
-          if (controller.isLoadingWeek.value) {
-            print('🔍 WeekCalendarWidget.build: Showing loading state');
-            return _buildLoadingState();
-          }
-
-          if (controller.weekError.value.isNotEmpty) {
-            print('🔍 WeekCalendarWidget.build: Showing error state');
-            return _buildErrorState();
-          }
-
-          final week = controller.selection.value.currentWeek;
-          if (week == null) {
-            print(
-                '🔍 WeekCalendarWidget.build: Showing empty state - no week data');
-            return _buildEmptyState();
-          }
-
-          print(
-              '🔍 WeekCalendarWidget.build: Building week grid with ${week.days.length} days');
-          return _buildWeekGrid(week);
-        }),
-      ],
+          // Week calendar grid
+          if (isLoading)
+            _buildLoadingState()
+          else if (error != null && error!.isNotEmpty)
+            _buildErrorState()
+          else if (days.isEmpty)
+            _buildEmptyState()
+          else
+            _buildWeekGrid(),
+        ],
+      ),
     );
   }
 
   /// Build week navigation header
   Widget _buildWeekNavigation() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Previous week button
-        IconButton(
-          onPressed: controller.currentWeekOffset.value > 0
-              ? controller.loadPreviousWeek
-              : null,
-          icon: Icon(
-            Icons.chevron_left,
-            color: controller.currentWeekOffset.value > 0
-                ? AppTheme.primary
-                : AppTheme.textMuted,
-          ),
-          tooltip: 'Previous Week',
-        ),
+    if (controller == null) return const SizedBox.shrink();
 
-        // Week summary
-        Expanded(
-          child: Center(
-            child: Column(
-              children: [
-                Text(
-                  _getWeekTitle(),
-                  style: Get.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  controller.getWeekSummary(),
-                  style: Get.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textMuted,
-                  ),
-                ),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Previous week button
+          Container(
+            decoration: BoxDecoration(
+              color: controller!.currentWeekOffset.value > 0
+                  ? AppTheme.primary
+                  : AppTheme.textMuted.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: controller!.currentWeekOffset.value > 0
+                  ? controller!.loadPreviousWeek
+                  : null,
+              icon: Icon(
+                Icons.chevron_left,
+                color: controller!.currentWeekOffset.value > 0
+                    ? Colors.white
+                    : AppTheme.textMuted,
+              ),
+              tooltip: 'Previous Week',
             ),
           ),
-        ),
 
-        // Next week button
-        IconButton(
-          onPressed: controller.loadNextWeek,
-          icon: Icon(
-            Icons.chevron_right,
-            color: AppTheme.primary,
+          // Week summary
+          Expanded(
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    _getWeekTitle(),
+                    style: Get.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    controller!.getWeekSummary(),
+                    style: Get.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          tooltip: 'Next Week',
-        ),
-      ],
+
+          // Next week button
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: controller!.loadNextWeek,
+              icon: const Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+              ),
+              tooltip: 'Next Week',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   /// Build loading state
   Widget _buildLoadingState() {
     return Container(
-      height: 120,
+      height: 150,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 7,
         itemBuilder: (context, index) {
           return Container(
-            width: 80,
-            margin: const EdgeInsets.only(right: 8),
+            width: 90,
+            margin: const EdgeInsets.only(right: 12),
             child: Column(
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 70,
+                  height: 70,
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.border),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: AppTheme.border.withValues(alpha: 0.5)),
                   ),
                   child: const Center(
                     child: SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 24,
+                      height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Container(
-                  width: 40,
-                  height: 8,
+                  width: 50,
+                  height: 10,
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                 ),
               ],
@@ -168,7 +204,7 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
   /// Build error state
   Widget _buildErrorState() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -176,24 +212,39 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: AppTheme.error,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.error,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline,
+              color: Colors.white,
+              size: 16,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
-              controller.weekError.value,
+              error!,
               style: Get.textTheme.bodyMedium?.copyWith(
                 color: AppTheme.error,
               ),
             ),
           ),
-          TextButton(
-            onPressed: controller.loadCurrentWeek,
-            child: const Text('Retry'),
-          ),
+          if (controller != null)
+            TextButton(
+              onPressed: controller!.loadCurrentWeek,
+              style: TextButton.styleFrom(
+                backgroundColor: AppTheme.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Retry'),
+            ),
         ],
       ),
     );
@@ -205,22 +256,29 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
       padding: const EdgeInsets.all(32),
       child: Column(
         children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 48,
-            color: AppTheme.textMuted.withValues(alpha: 0.5),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.textMuted.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.calendar_today_outlined,
+              size: 32,
+              color: AppTheme.textMuted,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
-            'No Availability Data',
+            'No Available Dates This Week',
             style: Get.textTheme.titleMedium?.copyWith(
               color: AppTheme.textMuted,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Please select an appointment type to view availability',
+            'Try selecting a different week or appointment type',
             style: Get.textTheme.bodySmall?.copyWith(
               color: AppTheme.textMuted,
             ),
@@ -232,21 +290,21 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
   }
 
   /// Build week grid
-  Widget _buildWeekGrid(WeekAvailability week) {
+  Widget _buildWeekGrid() {
     return SizedBox(
-      height: 120,
+      height: 150,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: week.days.length,
+        itemCount: days.length,
         itemBuilder: (context, index) {
-          final day = week.days[index];
+          final day = days[index];
           final isSelected =
-              controller.selectedDate.value?.toIso8601String().split('T')[0] ==
+              controller?.selectedDate.value?.toIso8601String().split('T')[0] ==
                   day.date;
 
           return Container(
-            width: 80,
-            margin: const EdgeInsets.only(right: 8),
+            width: 90,
+            margin: const EdgeInsets.only(right: 12),
             child: _buildDayCard(day, isSelected),
           );
         },
@@ -256,8 +314,9 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
 
   /// Build individual day card
   Widget _buildDayCard(DateRangeAvailability day, bool isSelected) {
-    final isSelectable = controller.isDateSelectable(day.date);
-    final status = controller.getAvailabilityStatus(day.date);
+    final isSelectable =
+        controller?.isDateSelectable(day.date) ?? day.hasAvailability;
+    final status = controller?.getAvailabilityStatus(day.date) ?? day.status;
 
     print(
         '🔍 WeekCalendarWidget._buildDayCard: ${day.date} - isSelectable=$isSelectable, isSelected=$isSelected, hasAvailability=${day.hasAvailability}');
@@ -266,7 +325,7 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
       onTap: isSelectable
           ? () {
               print('🖱️ Day card tapped: ${day.date}');
-              _onDayTap(day.date);
+              _onDayTap(day);
             }
           : null,
       child: Container(
@@ -274,25 +333,34 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
           color: isSelected
               ? AppTheme.primary.withValues(alpha: 0.1)
               : AppTheme.cardBackground,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppTheme.primary
                 : _getStatusColor(status).withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Day name
               Text(
@@ -300,7 +368,8 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
                 style: Get.textTheme.bodySmall?.copyWith(
                   color:
                       isSelectable ? AppTheme.textPrimary : AppTheme.textMuted,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
                 ),
               ),
               const SizedBox(height: 4),
@@ -329,11 +398,20 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
 
               // Slot count
               if (day.totalSlots > 0)
-                Text(
-                  '${day.availableSlots}/${day.totalSlots}',
-                  style: Get.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textMuted,
-                    fontSize: 10,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${day.availableSlots}',
+                    style: Get.textTheme.bodySmall?.copyWith(
+                      color: _getStatusColor(status),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 9,
+                    ),
                   ),
                 ),
             ],
@@ -344,27 +422,29 @@ class WeekCalendarWidget extends GetView<AvailabilityController> {
   }
 
   /// Handle day tap
-  void _onDayTap(String date) {
-    print('🖱️ WeekCalendarWidget: Day tapped - $date');
+  void _onDayTap(DateRangeAvailability day) {
+    print('🖱️ WeekCalendarWidget: Day tapped - ${day.date}');
     print(
         '🖱️ WeekCalendarWidget: Controller available: ${controller != null}');
     print(
-        '🖱️ WeekCalendarWidget: Selected appointment type: ${controller.selectedAppointmentType.value?.name}');
+        '🖱️ WeekCalendarWidget: Selected appointment type: ${controller?.selectedAppointmentType.value?.name}');
     print('🖱️ WeekCalendarWidget: Calling loadDayAvailability...');
 
     try {
-      controller.loadDayAvailability(date);
+      controller?.loadDayAvailability(day.date);
       print('🖱️ WeekCalendarWidget: loadDayAvailability called successfully');
     } catch (e) {
       print('❌ WeekCalendarWidget: Error calling loadDayAvailability: $e');
     }
 
-    onDateSelected?.call(date);
+    onDateSelected?.call(day);
   }
 
   /// Get week title
   String _getWeekTitle() {
-    final dates = controller.getCurrentWeekDates();
+    if (controller == null) return '';
+
+    final dates = controller!.getCurrentWeekDates();
     final start = dates.first;
     final end = dates.last;
 

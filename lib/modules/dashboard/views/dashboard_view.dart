@@ -7,11 +7,10 @@ import 'progress_view.dart';
 import 'more_view.dart';
 import '../../meal_plan/views/meal_plan_view.dart';
 import '../../meal_plan/controllers/meal_plan_controller.dart';
-import '../../chatbot/views/chatbot_view.dart';
-import '../../appointments/views/appointments_view.dart';
-import '../../settings/services/theme_service.dart';
-import '../../settings/models/theme_settings.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../controllers/dashboard_controller.dart';
+import '../../progress/controllers/progress_controller.dart';
+import '../../appointments/models/appointment_model.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -25,17 +24,33 @@ class _DashboardViewState extends State<DashboardView>
   int _currentIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final DashboardController _dashboardController =
+      Get.find<DashboardController>();
 
-  // Fake data for the chart
-  final List<FlSpot> spots = [
-    const FlSpot(0, 76.5),
-    const FlSpot(1, 76.2),
-    const FlSpot(2, 75.8),
-    const FlSpot(3, 75.5),
-    const FlSpot(4, 75.3),
-    const FlSpot(5, 75.1),
-    const FlSpot(6, 75.0),
-  ];
+  // Chart data will be generated from real progress data
+  List<FlSpot> get chartSpots {
+    final progressController = Get.find<ProgressController>();
+    final history = progressController.progressHistory.value;
+
+    if (history == null || history.progressEntries.isEmpty) {
+      // Return fake data if no real data available
+      return [
+        const FlSpot(0, 76.5),
+        const FlSpot(1, 76.2),
+        const FlSpot(2, 75.8),
+        const FlSpot(3, 75.5),
+        const FlSpot(4, 75.3),
+        const FlSpot(5, 75.1),
+        const FlSpot(6, 75.0),
+      ];
+    }
+
+    // Use real progress data for chart
+    final entries = history.progressEntries.take(7).toList();
+    return entries.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.weight);
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -74,7 +89,7 @@ class _DashboardViewState extends State<DashboardView>
   @override
   Widget build(BuildContext context) {
     // Initialize meal plan controller when dashboard loads
-    final mealPlanController = Get.put(MealPlanController());
+    Get.put(MealPlanController());
 
     return Scaffold(
       body: _getCurrentView(),
@@ -116,8 +131,12 @@ class _DashboardViewState extends State<DashboardView>
 
   Widget _buildHomeView() {
     return SafeArea(
-      child: FadeTransition(
-        opacity: _fadeAnimation,
+        child: FadeTransition(
+      opacity: _fadeAnimation,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await _dashboardController.refreshDashboard();
+        },
         child: CustomScrollView(
           slivers: [
             // Custom App Bar
@@ -138,25 +157,19 @@ class _DashboardViewState extends State<DashboardView>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Good morning, ${Get.find<AuthController>().currentUser.value?.name ?? 'User'}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .displayMedium
-                                  ?.copyWith(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              'Good Morning, ${Get.find<AuthController>().currentUser.value?.name ?? 'User'}',
+                              style: Get.textTheme.displayMedium?.copyWith(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Today, ${DateTime.now().toString().split(' ')[0]}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: AppTheme.textMuted,
-                                  ),
+                              style: Get.textTheme.bodyLarge?.copyWith(
+                                color: AppTheme.textMuted,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -169,8 +182,7 @@ class _DashboardViewState extends State<DashboardView>
                           // Theme Toggle Button
                           const ThemeToggle(),
                           const SizedBox(width: 8),
-                          // Language Toggle Button
-                          const LanguageToggle(),
+
                           const SizedBox(width: 8),
                           // User Avatar
                           Hero(
@@ -208,44 +220,53 @@ class _DashboardViewState extends State<DashboardView>
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // Quick Stats Grid
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.5,
-                    children: [
-                      _buildStatCard(
-                        'Current Weight',
-                        '75.5',
-                        'kg',
-                        AppTheme.violetBlue,
-                        Icons.monitor_weight_outlined,
-                      ),
-                      _buildStatCard(
-                        'Goal Weight',
-                        '70.0',
-                        'kg',
-                        AppTheme.tealCyan,
-                        Icons.flag_outlined,
-                      ),
-                      _buildStatCard(
-                        'Days Left',
-                        '15',
-                        'days',
-                        AppTheme.skyBlue,
-                        Icons.calendar_today_outlined,
-                      ),
-                      _buildStatCard(
-                        'Progress',
-                        '65',
-                        '%',
-                        AppTheme.limeGreen,
-                        Icons.trending_up_outlined,
-                      ),
-                    ],
-                  ),
+                  Obx(() {
+                    if (_dashboardController.isLoading.value) {
+                      return const SizedBox(
+                        height: 200,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1.5,
+                      children: [
+                        _buildStatCard(
+                          'Current Weight',
+                          _dashboardController.currentWeight,
+                          'kg',
+                          AppTheme.violetBlue,
+                          Icons.monitor_weight_outlined,
+                        ),
+                        _buildStatCard(
+                          'Goal Weight',
+                          _dashboardController.goalWeight,
+                          'kg',
+                          AppTheme.tealCyan,
+                          Icons.flag_outlined,
+                        ),
+                        _buildStatCard(
+                          'Days Left',
+                          _dashboardController.daysLeft,
+                          'days',
+                          AppTheme.skyBlue,
+                          Icons.calendar_today_outlined,
+                        ),
+                        _buildStatCard(
+                          'Progress',
+                          _dashboardController.progressPercentage,
+                          '%',
+                          AppTheme.limeGreen,
+                          Icons.trending_up_outlined,
+                        ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 32),
                   // Progress Summary Card
                   _buildProgressCard(context),
@@ -256,15 +277,15 @@ class _DashboardViewState extends State<DashboardView>
                   // Appointments Card
                   _buildAppointmentsCard(context),
                   const SizedBox(height: 24),
-                  // Recent Activities
-                  _buildRecentActivities(context),
+                  // Upcoming Appointments
+                  _buildUpcomingAppointments(context),
                 ]),
               ),
             ),
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildStatCard(
@@ -291,9 +312,9 @@ class _DashboardViewState extends State<DashboardView>
               const SizedBox(width: 8),
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppTheme.textMuted,
-                    ),
+                style: Get.textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textMuted,
+                ),
               ),
             ],
           ),
@@ -303,19 +324,19 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               Text(
                 value,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Get.textTheme.displaySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(width: 4),
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   unit,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
+                  style: Get.textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textMuted,
+                  ),
                 ),
               ),
             ],
@@ -347,9 +368,9 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               Text(
                 'Progress Summary',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Get.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Container(
                 padding:
@@ -449,7 +470,7 @@ class _DashboardViewState extends State<DashboardView>
                 maxY: 77,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: spots,
+                    spots: chartSpots,
                     isCurved: true,
                     gradient: LinearGradient(
                       colors: [
@@ -487,59 +508,88 @@ class _DashboardViewState extends State<DashboardView>
             ),
           ),
           const SizedBox(height: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Last updated',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.textMuted,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '2 hours ago',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.violetBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+          Obx(() {
+            final latestProgress = _dashboardController.latestProgress.value;
+            final weightChange = _dashboardController.weightChange;
+            final totalEntries = _dashboardController.totalEntries;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Weight Change',
+                            style: Get.textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$weightChange kg',
+                            style: Get.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: weightChange.startsWith('-')
+                                  ? AppTheme.success
+                                  : AppTheme.warning,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: Text(
-                      'View Details',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Entries',
+                            style: Get.textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$totalEntries',
+                            style: Get.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Get.toNamed('/progress'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.violetBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
+                            fontSize: 14,
                           ),
+                        ),
+                        icon: const Icon(Icons.arrow_forward, size: 16),
+                        label: Text('View Details'),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -591,10 +641,10 @@ class _DashboardViewState extends State<DashboardView>
                     const SizedBox(width: 12),
                     Text(
                       'Meal Plan',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
+                      style: Get.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                   ],
                 ),
@@ -614,17 +664,16 @@ class _DashboardViewState extends State<DashboardView>
                     children: [
                       Text(
                         'Today\'s Nutrition',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppTheme.textMuted,
-                                ),
+                        style: Get.textTheme.titleMedium?.copyWith(
+                          color: AppTheme.textMuted,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'View your personalized meal plan',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textMuted,
-                            ),
+                        style: Get.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -694,10 +743,10 @@ class _DashboardViewState extends State<DashboardView>
                     const SizedBox(width: 12),
                     Text(
                       'Appointments',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
+                      style: Get.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                   ],
                 ),
@@ -717,17 +766,16 @@ class _DashboardViewState extends State<DashboardView>
                     children: [
                       Text(
                         'Health Consultations',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppTheme.textMuted,
-                                ),
+                        style: Get.textTheme.titleMedium?.copyWith(
+                          color: AppTheme.textMuted,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Book and manage your appointments',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textMuted,
-                            ),
+                        style: Get.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -756,25 +804,31 @@ class _DashboardViewState extends State<DashboardView>
     );
   }
 
-  Widget _buildRecentActivities(BuildContext context) {
+  Widget _buildUpcomingAppointments(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recent Activities',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          'Upcoming Appointments',
+          style: Get.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: 3,
-          itemBuilder: (context, index) {
+        Obx(() {
+          if (_dashboardController.isLoadingUpcomingAppointments.value) {
+            return const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final appointments = _dashboardController.upcomingAppointments;
+
+          if (appointments.isEmpty) {
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              height: 120,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppTheme.cardBackground,
                 borderRadius: BorderRadius.circular(12),
@@ -783,53 +837,130 @@ class _DashboardViewState extends State<DashboardView>
                   width: 1,
                 ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.violetBlue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.event,
+                      size: 32,
+                      color: AppTheme.textMuted,
                     ),
-                    child: Icon(
-                      Icons.monitor_weight_outlined,
-                      color: AppTheme.violetBlue,
+                    const SizedBox(height: 8),
+                    Text(
+                      'No upcoming appointments',
+                      style: Get.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Weight Update',
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '75.5 kg',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.textMuted,
-                                  ),
-                        ),
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      'Your appointments will appear here',
+                      style: Get.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '2h ago',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textMuted,
-                        ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
-          },
-        ),
+          }
+
+          return ListView.builder(
+            key: const ValueKey('upcoming_appointments_list'),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: appointments.length,
+            itemBuilder: (context, index) {
+              final appointment = appointments[index];
+              return Container(
+                key: ValueKey('appointment_${appointment.id}'),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Get.theme.cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Get.theme.dividerColor.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: appointment.status == AppointmentStatus.confirmed
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.event,
+                        color: appointment.status == AppointmentStatus.confirmed
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            appointment.typeText,
+                            style: Get.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            appointment.dietitianName ?? 'Unknown Dietitian',
+                            style: Get.textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            appointment.displayTime,
+                            style: Get.textTheme.bodySmall?.copyWith(
+                              color: appointment.status ==
+                                      AppointmentStatus.confirmed
+                                  ? Colors.green
+                                  : Colors.orange,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: appointment.status == AppointmentStatus.confirmed
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        appointment.statusText,
+                        style: Get.textTheme.bodySmall?.copyWith(
+                          color:
+                              appointment.status == AppointmentStatus.confirmed
+                                  ? Colors.green
+                                  : Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }),
       ],
     );
   }

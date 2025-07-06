@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import '../services/settings_service.dart';
 import '../services/notification_service.dart';
-import '../services/language_service.dart';
 import '../services/theme_service.dart';
 import '../controllers/settings_controller.dart';
 
@@ -16,11 +15,6 @@ class SettingsBinding extends Bindings {
 
     Get.lazyPut<NotificationService>(
       () => NotificationService(),
-      fenix: true,
-    );
-
-    Get.lazyPut<LanguageService>(
-      () => LanguageService(),
       fenix: true,
     );
 

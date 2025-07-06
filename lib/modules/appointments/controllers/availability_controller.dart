@@ -33,6 +33,9 @@ class AvailabilityController extends GetxController {
   final Map<String, DayAvailability> _dayCache = {};
   final Map<int, WeekAvailability> _weekCache = {};
 
+  // Cache for unavailable slots to prevent re-checking
+  final Map<String, bool> _unavailableSlotsCache = <String, bool>{};
+
   AvailabilityController(this._appointmentsService);
 
   @override
@@ -93,11 +96,13 @@ class AvailabilityController extends GetxController {
       // Cache the result
       _weekCache[weekOffset] = weekAvailability;
 
-      selection.update((val) => val?.copyWith(
-            currentWeek: weekAvailability,
-            isLoading: false,
-            error: null,
-          ));
+      // Update the selection state
+      final updatedSelection = selection.value.copyWith(
+        currentWeek: weekAvailability,
+        isLoading: false,
+        error: null,
+      );
+      selection.value = updatedSelection;
       currentWeekOffset.value = weekOffset;
 
       print(
@@ -107,13 +112,22 @@ class AvailabilityController extends GetxController {
         print(
             '  - ${day.dayName} (${day.date}): ${day.hasAvailability ? "Available" : "Not Available"} (${day.slotsCount} slots)');
       }
+
+      // Debug: Check if state was updated
+      print(
+          '🔍 Debug: selection.value.currentWeek exists: ${selection.value.currentWeek != null}');
+      print(
+          '🔍 Debug: selection.value.currentWeek?.days.length: ${selection.value.currentWeek?.days.length}');
     } catch (e) {
       print('❌ AvailabilityController.loadWeekAvailability error: $e');
       weekError.value = 'Failed to load week availability: $e';
-      selection.update((val) => val?.copyWith(
-            isLoading: false,
-            error: weekError.value,
-          ));
+
+      // Update the selection state with error
+      final updatedSelection = selection.value.copyWith(
+        isLoading: false,
+        error: weekError.value,
+      );
+      selection.value = updatedSelection;
     } finally {
       isLoadingWeek.value = false;
     }
@@ -176,19 +190,36 @@ class AvailabilityController extends GetxController {
       List<AppointmentSlot> slots = [];
 
       try {
-        // Try to get slots from API
-        slots = await _appointmentsService.getAvailableSlots(
+        // Try to get all slots (both available and booked) from API
+        final dayAvailability = await _appointmentsService.getAllTimeSlots(
           date: date,
           appointmentTypeId: selectedAppointmentType.value!.id,
         );
         print(
-            '✅ AvailabilityController: Received ${slots.length} slots from API');
+            '✅ AvailabilityController: Received ${dayAvailability.slots.length} slots from API');
 
-        // Test the API response structure
-        await _appointmentsService.testAvailableSlotsResponse(
-          date: date,
-          appointmentTypeId: selectedAppointmentType.value!.id,
-        );
+        // Cache the result
+        _dayCache[cacheKey] = dayAvailability;
+
+        // Clear unavailable slots cache for this date when new data is loaded
+        _unavailableSlotsCache
+            .removeWhere((key, value) => key.startsWith('${date}_'));
+
+        final parsedDate = DateTime.parse(date);
+        setSelectedDate(parsedDate);
+        selectedDay.value = dayAvailability;
+
+        selection.update((val) => val?.copyWith(
+              selectedDay: dayAvailability,
+              selectedDate: parsedDate,
+              isLoading: false,
+              error: null,
+            ));
+
+        print('✅ AvailabilityController: Loaded day availability for $date');
+        print('✅ Selected day slots: ${dayAvailability.slots.length}');
+        print('✅ Selected day total slots: ${dayAvailability.totalSlots}');
+        return;
       } catch (apiError) {
         print('⚠️ API call failed, using fallback: $apiError');
 
@@ -245,6 +276,10 @@ class AvailabilityController extends GetxController {
 
       // Cache the result
       _dayCache[cacheKey] = dayAvailability;
+
+      // Clear unavailable slots cache for this date when new data is loaded
+      _unavailableSlotsCache
+          .removeWhere((key, value) => key.startsWith('${date}_'));
 
       final parsedDate = DateTime.parse(date);
       setSelectedDate(parsedDate);
@@ -311,19 +346,35 @@ class AvailabilityController extends GetxController {
 
   /// Select a time slot
   void selectTimeSlot(AppointmentSlot slot) {
+    print(
+        '🔄 AvailabilityController.selectTimeSlot: Setting slot to ${slot.formattedTime}');
+    print(
+        '🔄 AvailabilityController.selectTimeSlot: Previous selectedSlot was ${selectedSlot.value?.formattedTime}');
+
     selectedSlot.value = slot;
-    selection.update((val) => val?.copyWith(
-          selectedSlot: slot,
-        ));
+
+    // Update the selection state properly
+    final updatedSelection = selection.value.copyWith(
+      selectedSlot: slot,
+    );
+    selection.value = updatedSelection;
+
     print('✅ AvailabilityController: Selected time slot ${slot.formattedTime}');
+    print(
+        '🔍 AvailabilityController: selectedSlot.value is ${selectedSlot.value?.formattedTime}');
+    print(
+        '🔍 AvailabilityController: selection.value.selectedSlot is ${selection.value.selectedSlot?.formattedTime}');
   }
 
   /// Clear time slot selection
   void clearTimeSlotSelection() {
     selectedSlot.value = null;
-    selection.update((val) => val?.copyWith(
-          selectedSlot: null,
-        ));
+
+    // Update the selection state properly
+    final updatedSelection = selection.value.copyWith(
+      selectedSlot: null,
+    );
+    selection.value = updatedSelection;
   }
 
   /// Clear date selection
@@ -331,11 +382,14 @@ class AvailabilityController extends GetxController {
     setSelectedDate(null);
     selectedDay.value = null;
     selectedSlot.value = null;
-    selection.update((val) => val?.copyWith(
-          selectedDate: null,
-          selectedDay: null,
-          selectedSlot: null,
-        ));
+
+    // Update the selection state properly
+    final updatedSelection = selection.value.copyWith(
+      selectedDate: null,
+      selectedDay: null,
+      selectedSlot: null,
+    );
+    selection.value = updatedSelection;
   }
 
   /// Clear all selections
@@ -343,22 +397,45 @@ class AvailabilityController extends GetxController {
     setSelectedDate(null);
     selectedDay.value = null;
     selectedSlot.value = null;
-    selection.update((val) => val?.copyWith(
-          selectedDate: null,
-          selectedSlot: null,
-          selectedDay: null,
-        ));
+
+    // Update the selection state properly
+    final updatedSelection = selection.value.copyWith(
+      selectedDate: null,
+      selectedSlot: null,
+      selectedDay: null,
+    );
+    selection.value = updatedSelection;
+
+    print('✅ AvailabilityController: Cleared all selections');
   }
 
   /// Set appointment type
   void setAppointmentType(AppointmentTypeAPI type) {
     selectedAppointmentType.value = type;
+
+    // Sync to AppointmentsController
+    _syncAppointmentTypeToAppointmentsController(type);
+
     // Clear cache when appointment type changes
     _dayCache.clear();
     _weekCache.clear();
+    _unavailableSlotsCache.clear();
     // Reload current week with new type
     loadCurrentWeek();
     print('✅ AvailabilityController: Set appointment type to ${type.name}');
+  }
+
+  /// Sync appointment type to AppointmentsController
+  void _syncAppointmentTypeToAppointmentsController(AppointmentTypeAPI type) {
+    try {
+      final appointmentsController = Get.find<AppointmentsController>();
+      appointmentsController.setSelectedAppointmentType(type);
+      print(
+          '🔄 AvailabilityController: Synced appointment type to AppointmentsController');
+    } catch (e) {
+      print(
+          '⚠️ AvailabilityController: Could not sync appointment type to AppointmentsController: $e');
+    }
   }
 
   /// Check if a date is selectable
@@ -534,13 +611,71 @@ class AvailabilityController extends GetxController {
     print(
         '🔍 AvailabilityController.setSelectedDate: Setting date to ${date?.toIso8601String().split('T')[0]}');
     selectedDate.value = date;
-    selection.update((val) => val?.copyWith(
-          selectedDate: date,
-        ));
+
+    // Update the selection state properly
+    final updatedSelection = selection.value.copyWith(
+      selectedDate: date,
+    );
+    selection.value = updatedSelection;
 
     if (date != null) {
       print(
           '🔍 AvailabilityController.setSelectedDate: Date set, selectedDay.value is ${selectedDay.value?.date}');
+      print(
+          '🔍 AvailabilityController.setSelectedDate: selection.value.selectedDate is ${selection.value.selectedDate}');
     }
+  }
+
+  /// Check if a specific slot is available
+  Future<bool> isSlotAvailable(
+      String date, String startTime, int appointmentTypeId) async {
+    final cacheKey = '${date}_${startTime}_$appointmentTypeId';
+    print('🔍 Checking slot availability: $cacheKey');
+
+    // Check cache first
+    if (_unavailableSlotsCache.containsKey(cacheKey)) {
+      final isUnavailable = _unavailableSlotsCache[cacheKey]!;
+      print('🔍 Found in cache: unavailable=$isUnavailable');
+      return !isUnavailable;
+    }
+
+    try {
+      print('🔍 Calling API to check slot availability');
+      final availability = await _appointmentsService.checkSlotAvailability(
+        date: date,
+        startTime: startTime,
+        appointmentTypeId: appointmentTypeId,
+      );
+
+      // Cache the result
+      final isUnavailable = !availability.isAvailable;
+      _unavailableSlotsCache[cacheKey] = isUnavailable;
+      print(
+          '🔍 API result: isAvailable=${availability.isAvailable}, cached as unavailable=$isUnavailable');
+
+      return availability.isAvailable;
+    } catch (e) {
+      print('❌ Error checking slot availability: $e');
+      return false;
+    }
+  }
+
+  /// Check if a slot is known to be unavailable (from cache)
+  bool isSlotKnownUnavailable(
+      String date, String startTime, int appointmentTypeId) {
+    final cacheKey = '${date}_${startTime}_$appointmentTypeId';
+    return _unavailableSlotsCache[cacheKey] ?? false;
+  }
+
+  /// Clear the unavailable slots cache
+  void clearUnavailableSlotsCache() {
+    _unavailableSlotsCache.clear();
+  }
+
+  /// Mark a slot as unavailable in cache
+  void markSlotAsUnavailable(
+      String date, String startTime, int appointmentTypeId) {
+    final cacheKey = '${date}_${startTime}_$appointmentTypeId';
+    _unavailableSlotsCache[cacheKey] = true;
   }
 }

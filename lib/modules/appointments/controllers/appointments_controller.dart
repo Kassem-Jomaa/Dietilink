@@ -263,6 +263,14 @@ class AppointmentsController extends GetxController {
       );
 
       print('✅ AppointmentsController: Slot availability checked');
+
+      // If slot is not available, set the reason as error message
+      if (!availability.isAvailable) {
+        String reason = availability.reason ?? 'Time slot is not available';
+        error.value = reason;
+        print('❌ AppointmentsController: Slot not available - $reason');
+      }
+
       return availability.isAvailable;
     } on ApiException catch (e) {
       print(
@@ -281,9 +289,22 @@ class AppointmentsController extends GetxController {
 
   /// Book a new appointment with slot availability check
   Future<bool> bookAppointment() async {
+    print('🔍 AppointmentsController: bookAppointment() called');
+    print('🔍 AppointmentsController: Current state:');
+    print('  - dietitianInfo: ${dietitianInfo.value?.name ?? "null"}');
+    print(
+        '  - selectedAppointmentType: ${selectedAppointmentType.value?.name ?? "null"}');
+    print('  - selectedDate: ${selectedDate.value}');
+    print('  - selectedTime: ${selectedTime.value}');
+    print('  - notes: ${notes.value}');
+
     try {
       if (dietitianInfo.value == null ||
           selectedAppointmentType.value == null) {
+        print('❌ AppointmentsController: Missing required data');
+        print('  - dietitianInfo is null: ${dietitianInfo.value == null}');
+        print(
+            '  - selectedAppointmentType is null: ${selectedAppointmentType.value == null}');
         error.value =
             'Please select appointment type and ensure dietitian info is loaded';
         return false;
@@ -294,6 +315,7 @@ class AppointmentsController extends GetxController {
 
       print('📅 AppointmentsController: Booking appointment...');
 
+      print('🔍 AppointmentsController: Checking slot availability...');
       // Check slot availability before booking
       final isSlotAvailable = await checkSlotAvailability(
         date: selectedDate.value.toIso8601String().split('T')[0],
@@ -301,13 +323,16 @@ class AppointmentsController extends GetxController {
         appointmentTypeId: selectedAppointmentType.value!.id,
       );
 
+      print(
+          '🔍 AppointmentsController: Slot availability result: $isSlotAvailable');
       if (!isSlotAvailable) {
-        ErrorHandlerService.showWarning(
-          'This time slot is no longer available. Please choose another time.',
-          title: 'Slot Unavailable',
-        );
+        print('❌ AppointmentsController: Slot is not available');
+        // Don't show warning here since we'll handle it in the view
+        // The error message is already set in checkSlotAvailability
         return false;
       }
+      print(
+          '✅ AppointmentsController: Slot is available, proceeding with booking');
 
       final appointment = await _appointmentsService.bookAppointment(
         dietitianId: dietitianInfo.value!.id,

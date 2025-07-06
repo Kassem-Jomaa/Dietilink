@@ -5,7 +5,6 @@ import 'routes/app_pages.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/api_service.dart';
 import 'modules/auth/controllers/auth_controller.dart';
-import 'modules/settings/services/language_service.dart';
 import 'modules/settings/services/theme_service.dart';
 import 'modules/settings/models/theme_settings.dart';
 import 'translations.dart';
@@ -17,7 +16,6 @@ void main() async {
   await Get.putAsync(() => ApiService().init());
 
   // Initialize settings services
-  Get.put(LanguageService());
   final themeService = Get.put(ThemeService());
 
   // Initialize controllers
@@ -53,7 +51,7 @@ class DietiLinkApp extends StatelessWidget {
       themeMode: ThemeMode.system, // Will be controlled by ThemeService
 
       // Localization configuration
-      locale: const Locale('en', 'US'), // Will be controlled by LanguageService
+      locale: const Locale('en', 'US'),
       fallbackLocale: const Locale('en', 'US'),
       supportedLocales: const [
         Locale('en', 'US'),

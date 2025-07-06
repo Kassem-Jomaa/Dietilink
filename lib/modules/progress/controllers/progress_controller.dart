@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/exceptions/api_exception.dart';
 import '../models/progress_model.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 
 class ProgressController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
@@ -327,6 +328,15 @@ class ProgressController extends GetxController {
       );
 
       await loadInitialData(); // Refresh data
+
+      // Notify dashboard to refresh
+      try {
+        final dashboardController = Get.find<DashboardController>();
+        await dashboardController.refreshDashboard();
+      } catch (e) {
+        print('❌ Failed to refresh dashboard: $e');
+      }
+
       selectedImages.clear();
       return true;
     } catch (e) {
@@ -464,6 +474,15 @@ class ProgressController extends GetxController {
       );
 
       await loadInitialData(); // Refresh data
+
+      // Notify dashboard to refresh
+      try {
+        final dashboardController = Get.find<DashboardController>();
+        await dashboardController.refreshDashboard();
+      } catch (e) {
+        print('❌ Failed to refresh dashboard: $e');
+      }
+
       return true;
     } catch (e) {
       _handleError(e, 'updating progress entry');
@@ -489,6 +508,15 @@ class ProgressController extends GetxController {
       );
 
       await loadInitialData(); // Refresh data
+
+      // Notify dashboard to refresh
+      try {
+        final dashboardController = Get.find<DashboardController>();
+        await dashboardController.refreshDashboard();
+      } catch (e) {
+        print('❌ Failed to refresh dashboard: $e');
+      }
+
       return true;
     } catch (e) {
       _handleError(e, 'deleting progress entry');

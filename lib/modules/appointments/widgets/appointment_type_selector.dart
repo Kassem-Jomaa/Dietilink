@@ -24,48 +24,80 @@ class AppointmentTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Appointment Type',
-          style: Get.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-        ),
-        const SizedBox(height: 12),
-        if (isLoading)
-          _buildLoadingState()
-        else if (error != null)
-          _buildErrorState()
-        else if (appointmentTypes.isEmpty)
-          _buildEmptyState()
-        else
-          _buildTypeList(),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.medical_services,
+                color: AppTheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Appointment Type',
+                style: Get.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Choose the type of appointment you need',
+            style: Get.textTheme.bodySmall?.copyWith(
+              color: AppTheme.textMuted,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (isLoading)
+            _buildLoadingState()
+          else if (error != null)
+            _buildErrorState()
+          else if (appointmentTypes.isEmpty)
+            _buildEmptyState()
+          else
+            _buildTypeList(),
+        ],
+      ),
     );
   }
 
   Widget _buildLoadingState() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.violetBlue),
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Text(
             'Loading appointment types...',
             style: Get.textTheme.bodyMedium?.copyWith(
@@ -79,7 +111,7 @@ class AppointmentTypeSelector extends StatelessWidget {
 
   Widget _buildErrorState() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -87,12 +119,19 @@ class AppointmentTypeSelector extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: AppTheme.error,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.error,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline,
+              color: Colors.white,
+              size: 16,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               error ?? 'Failed to load appointment types',
@@ -108,20 +147,27 @@ class AppointmentTypeSelector extends StatelessWidget {
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline,
-            color: AppTheme.textMuted,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.textMuted.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.info_outline,
+              color: AppTheme.textMuted,
+              size: 16,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Text(
             'No appointment types available',
             style: Get.textTheme.bodyMedium?.copyWith(
@@ -143,7 +189,7 @@ class AppointmentTypeSelector extends StatelessWidget {
     final isSelected = selectedType?.id == type.id;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
           onTypeSelected(type);
@@ -158,35 +204,46 @@ class AppointmentTypeSelector extends StatelessWidget {
             icon: Icon(_getTypeIcon(type.name), color: Colors.white),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: isSelected
                 ? _getTypeColor(type.color).withValues(alpha: 0.1)
                 : AppTheme.cardBackground,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? _getTypeColor(type.color) : AppTheme.border,
+              color: isSelected
+                  ? _getTypeColor(type.color)
+                  : AppTheme.border.withValues(alpha: 0.5),
               width: isSelected ? 2 : 1,
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: _getTypeColor(type.color).withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
               // Type icon
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _getTypeColor(type.color).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   _getTypeIcon(type.name),
                   color: _getTypeColor(type.color),
-                  size: 20,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
 
               // Type details
               Expanded(
@@ -206,27 +263,27 @@ class AppointmentTypeSelector extends StatelessWidget {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 10,
+                            vertical: 6,
                           ),
                           decoration: BoxDecoration(
                             color: _getTypeColor(type.color)
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             type.formattedDuration,
                             style: Get.textTheme.bodySmall?.copyWith(
                               color: _getTypeColor(type.color),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
                             ),
                           ),
                         ),
                       ],
                     ),
                     if (type.description != null) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         type.description!,
                         style: Get.textTheme.bodySmall?.copyWith(
@@ -242,10 +299,17 @@ class AppointmentTypeSelector extends StatelessWidget {
 
               // Selection indicator
               if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: _getTypeColor(type.color),
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _getTypeColor(type.color),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
             ],
           ),

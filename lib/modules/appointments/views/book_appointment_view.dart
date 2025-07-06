@@ -464,8 +464,27 @@ class BookAppointmentView extends GetView<AppointmentsController> {
 
   /// Handle booking form submission
   void _handleBookingSubmit(AppointmentFormData formData) async {
+    print('🔍 BookAppointmentView: _handleBookingSubmit called');
+
+    final availabilityController = Get.find<AvailabilityController>();
+
+    print('🔍 BookAppointmentView: Form data:');
+    print('  - appointmentDate: ${formData.appointmentDate}');
+    print('  - startTime: ${formData.startTime}');
+    print('  - notes: ${formData.notes}');
+    print(
+        '  - selectedAppointmentType: ${controller.selectedAppointmentType.value?.name}');
+    print('  - selectedDate: ${controller.selectedDate.value}');
+    print('  - selectedTime: ${controller.selectedTime.value}');
+
+    // Use the selected slot from availability controller instead of form data
+    final selectedSlot = availabilityController.selectedSlot.value;
+    print(
+        '🔍 BookAppointmentView: Selected slot from availability: ${selectedSlot?.startTime} - ${selectedSlot?.endTime}');
+
     try {
       if (controller.selectedAppointmentType.value == null) {
+        print('❌ BookAppointmentView: No appointment type selected');
         Get.snackbar(
           'Error',
           'Please select an appointment type',
@@ -476,15 +495,34 @@ class BookAppointmentView extends GetView<AppointmentsController> {
         return;
       }
 
-      // Set the form data in controller using the new structure
+      if (selectedSlot == null) {
+        print('❌ BookAppointmentView: No time slot selected');
+        Get.snackbar(
+          'Error',
+          'Please select a time slot',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppTheme.error,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      print('🔍 BookAppointmentView: Setting form data in controller');
+      // Set the form data in controller using the selected slot
       controller.setSelectedDate(DateTime.parse(formData.appointmentDate));
-      controller.setSelectedTime(formData.startTime);
+      controller
+          .setSelectedTime(selectedSlot.startTime); // Use selected slot time
       controller.notes.value = formData.notes;
 
+      print('🔍 BookAppointmentView: Calling controller.bookAppointment()');
+      print('🔍 BookAppointmentView: Using time: ${selectedSlot.startTime}');
       // Book the appointment using controller method
       final success = await controller.bookAppointment();
 
+      print('🔍 BookAppointmentView: bookAppointment result: $success');
       if (success) {
+        print('✅ BookAppointmentView: Booking successful');
+
         // Show success message
         Get.snackbar(
           'Success',
@@ -492,21 +530,59 @@ class BookAppointmentView extends GetView<AppointmentsController> {
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppTheme.success,
           colorText: Colors.white,
+          duration: const Duration(seconds: 3),
         );
 
-        // Navigate back to appointments list
-        Get.back();
+        // Clear all selections to prepare for a new booking
+        availabilityController.clearAllSelections();
+        controller.clearBookingForm();
+
+        // Show dialog asking if user wants to book another appointment
+        _showBookAnotherDialog();
       } else {
-        // Show error message from controller
+        print('❌ BookAppointmentView: Booking failed');
+        print(
+            '🔍 BookAppointmentView: Error message: ${controller.error.value}');
+
+        // Show more specific error message based on the error
+        String errorMessage = controller.error.value;
+        if (errorMessage.isEmpty) {
+          errorMessage =
+              'This time slot is no longer available. Please choose another time.';
+        }
+
         Get.snackbar(
-          'Error',
-          controller.error.value,
+          'Slot Unavailable',
+          errorMessage,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppTheme.error,
           colorText: Colors.white,
+          duration: const Duration(seconds: 4),
         );
+
+        // Mark the failed slot as unavailable and refresh availability
+        final availabilityController = Get.find<AvailabilityController>();
+        if (availabilityController.selectedDate.value != null &&
+            availabilityController.selectedSlot.value != null) {
+          print(
+              '🔄 BookAppointmentView: Marking slot as unavailable after booking failure');
+
+          // Mark the slot as unavailable in cache
+          availabilityController.markSlotAsUnavailable(
+            availabilityController.selectedDate.value!
+                .toIso8601String()
+                .split('T')[0],
+            availabilityController.selectedSlot.value!.startTime,
+            availabilityController.selectedSlot.value!.appointmentTypeId,
+          );
+
+          // Clear the selected slot since booking failed
+          availabilityController.clearTimeSlotSelection();
+        }
       }
     } catch (e) {
+      print('❌ BookAppointmentView: Exception caught: $e');
+      print('🔍 BookAppointmentView: Exception type: ${e.runtimeType}');
       Get.snackbar(
         'Error',
         'Failed to book appointment: $e',
@@ -515,6 +591,62 @@ class BookAppointmentView extends GetView<AppointmentsController> {
         colorText: Colors.white,
       );
     }
+  }
+
+  /// Show dialog to ask if user wants to book another appointment
+  void _showBookAnotherDialog() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.success,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Booking Successful!'),
+          ],
+        ),
+        content: const Text(
+          'Your appointment has been booked successfully. Would you like to book another appointment?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back(); // Close dialog
+              Get.offAllNamed('/dashboard'); // Navigate to dashboard
+            },
+            child: const Text('No, Thanks'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back(); // Close dialog
+              // Stay on the same page (already cleared selections)
+              // The user can now book another appointment
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.success,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Book Another'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Select date using date picker

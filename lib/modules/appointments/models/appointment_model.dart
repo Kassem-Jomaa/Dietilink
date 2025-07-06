@@ -26,6 +26,9 @@ class Appointment {
   final DateTime updatedAt;
   final bool canBeCanceled;
   final bool canBeRescheduled;
+  final DateTime? startTime;
+  final DateTime? endTime;
+  final String? formattedTimeRange;
 
   Appointment({
     required this.id,
@@ -42,30 +45,35 @@ class Appointment {
     required this.updatedAt,
     required this.canBeCanceled,
     required this.canBeRescheduled,
+    this.startTime,
+    this.endTime,
+    this.formattedTimeRange,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
       id: json['id'],
-      appointmentDate: DateTime.parse(json['date'] ??
-          json[
-              'appointment_date']), // API returns 'date' not 'appointment_date'
-      reason: json['notes'], // API uses 'notes' field for reason
+      appointmentDate: DateTime.parse(json['date'] ?? json['appointment_date']),
+      reason: json['notes'],
       notes: json['notes'],
       status: _parseStatus(json['status']),
       appointmentTypeId:
           json['appointment_type']?['id'] ?? json['appointment_type_id'] ?? 0,
       dietitianId: json['dietitian']?['id'] ?? json['dietitian_id'] ?? 0,
-      dietitianName: json['dietitian']
-          ?['name'], // API returns nested dietitian object
+      dietitianName: json['dietitian']?['name'],
       dietitianSpecialty:
           json['dietitian']?['specialty'] ?? json['dietitian_specialty'],
       location: json['dietitian']?['clinic_name'] ?? json['location'],
       createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at'] ??
-          json['created_at']), // API doesn't always provide updated_at
+      updatedAt: DateTime.parse(json['updated_at'] ?? json['created_at']),
       canBeCanceled: json['can_be_canceled'] ?? false,
       canBeRescheduled: json['can_be_rescheduled'] ?? false,
+      startTime: json['start_time'] != null
+          ? DateTime.parse(json['start_time'])
+          : null,
+      endTime:
+          json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
+      formattedTimeRange: json['formatted_time_range'],
     );
   }
 
@@ -184,6 +192,8 @@ class Appointment {
 
   /// Check if appointment has reminder (placeholder)
   bool get hasReminder => false;
+
+  String get displayTime => formattedTimeRange ?? formattedTime;
 }
 
 /// Appointment History Response Model

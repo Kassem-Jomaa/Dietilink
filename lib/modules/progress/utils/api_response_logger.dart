@@ -3,7 +3,8 @@ import 'dart:convert';
 /// Utility class for logging and analyzing API response types
 /// This helps identify type inconsistencies between expected and actual API responses
 class ApiResponseLogger {
-  static const bool enableLogging = true; // Set to false in production
+  static const bool enableLogging =
+      false; // Set to false to prevent infinite loops
 
   /// Log the structure and types of an API response
   static void logResponse(String endpoint, Map<String, dynamic> response) {

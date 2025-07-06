@@ -2,18 +2,15 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/settings_model.dart';
 import '../models/notification_settings.dart';
-import '../models/language_settings.dart';
 import '../models/theme_settings.dart';
 import '../services/settings_service.dart';
 import '../services/notification_service.dart';
-import '../services/language_service.dart';
 import '../services/theme_service.dart';
 
 class SettingsController extends GetxController {
   final SettingsService _settingsService = Get.find<SettingsService>();
   final NotificationService _notificationService =
       Get.find<NotificationService>();
-  final LanguageService _languageService = Get.find<LanguageService>();
   final ThemeService _themeService = Get.find<ThemeService>();
 
   // Observable settings
@@ -23,7 +20,6 @@ class SettingsController extends GetxController {
 
   // Individual settings observables for easy access
   late Rx<NotificationSettings> notifications;
-  late Rx<LanguageSettings> language;
   late Rx<ThemeSettings> theme;
 
   @override
@@ -44,7 +40,6 @@ class SettingsController extends GetxController {
 
       // Initialize individual observables
       notifications = settings.value.notifications.obs;
-      language = settings.value.language.obs;
       theme = settings.value.theme.obs;
 
       // Apply settings
@@ -62,9 +57,6 @@ class SettingsController extends GetxController {
   /// Apply settings to the app
   Future<void> _applySettings(SettingsModel newSettings) async {
     try {
-      // Apply language settings
-      await _languageService.setLanguage(newSettings.language.language);
-
       // Apply theme settings
       await _themeService.setThemeMode(newSettings.theme.themeMode);
 
@@ -93,19 +85,6 @@ class SettingsController extends GetxController {
     }
   }
 
-  /// Update language settings
-  Future<void> updateLanguageSettings(LanguageSettings newSettings) async {
-    try {
-      language.value = newSettings;
-      await _languageService.setLanguage(newSettings.language);
-      await _saveSettings();
-      print('SettingsController: Language settings updated');
-    } catch (e) {
-      print('SettingsController: Failed to update language settings: $e');
-      error.value = 'Failed to update language settings: $e';
-    }
-  }
-
   /// Update theme settings
   Future<void> updateThemeSettings(ThemeSettings newSettings) async {
     try {
@@ -124,7 +103,6 @@ class SettingsController extends GetxController {
     try {
       final currentSettings = settings.value.copyWith(
         notifications: notifications.value,
-        language: language.value,
         theme: theme.value,
       );
 
@@ -146,7 +124,6 @@ class SettingsController extends GetxController {
       final defaultSettings = SettingsModel.defaultSettings();
       settings.value = defaultSettings;
       notifications.value = defaultSettings.notifications;
-      language.value = defaultSettings.language;
       theme.value = defaultSettings.theme;
 
       await _applySettings(defaultSettings);
@@ -183,7 +160,6 @@ class SettingsController extends GetxController {
           await _settingsService.importSettings(settingsData);
       settings.value = importedSettings;
       notifications.value = importedSettings.notifications;
-      language.value = importedSettings.language;
       theme.value = importedSettings.theme;
 
       await _applySettings(importedSettings);

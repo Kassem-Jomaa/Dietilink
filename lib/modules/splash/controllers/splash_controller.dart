@@ -13,14 +13,21 @@ class SplashController extends GetxController {
 
   Future<void> _initializeApp() async {
     try {
+      print('\n🚀 Initializing app...');
       await _authController.checkAuthStatus();
 
+      print('Auth status: ${_authController.isAuthenticated.value}');
+
       if (_authController.isAuthenticated.value) {
+        print('✅ User is authenticated, navigating to dashboard');
         Get.offAllNamed('/dashboard');
       } else {
+        print('❌ User is not authenticated, navigating to login');
         Get.offAllNamed('/login');
       }
     } catch (e) {
+      print('❌ Error during app initialization: $e');
+      // In case of error, navigate to login
       Get.offAllNamed('/login');
     } finally {
       isLoading.value = false;

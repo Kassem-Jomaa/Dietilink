@@ -257,30 +257,53 @@ class DayAvailability {
     print(
         '🔍 DayAvailability.fromJson: Processing JSON: ${json.keys.toList()}');
 
+    // Handle both direct response and nested data structure
+    Map<String, dynamic> data;
+    if (json['data'] != null) {
+      data = json['data'] as Map<String, dynamic>;
+      print('🔍 Using nested data structure');
+    } else {
+      data = json;
+      print('🔍 Using direct response structure');
+    }
+
     // Try different possible field names for slots
     List<dynamic> slotsData = [];
-    if (json['available_slots'] != null) {
-      slotsData = json['available_slots'] as List;
+    if (data['available_slots'] != null) {
+      slotsData = data['available_slots'] as List;
       print('🔍 Found slots in available_slots: ${slotsData.length}');
-    } else if (json['slots'] != null) {
-      slotsData = json['slots'] as List;
+    } else if (data['slots'] != null) {
+      slotsData = data['slots'] as List;
       print('🔍 Found slots in slots: ${slotsData.length}');
-    } else if (json['data'] != null &&
-        json['data']['available_slots'] != null) {
-      slotsData = json['data']['available_slots'] as List;
-      print('🔍 Found slots in data.available_slots: ${slotsData.length}');
+    } else if (json['available_slots'] != null) {
+      slotsData = json['available_slots'] as List;
+      print('🔍 Found slots in root available_slots: ${slotsData.length}');
     }
 
     print('🔍 DayAvailability.fromJson: Processing ${slotsData.length} slots');
 
     final slots = <AppointmentSlot>[];
+
+    // Extract date and appointment type ID from the correct location
+    final date = data['date'] ?? json['date'] ?? '';
+    final appointmentTypeId =
+        data['appointment_type']?['id'] ?? json['appointment_type']?['id'] ?? 0;
+
+    print('🔍 Extracted date: $date, appointmentTypeId: $appointmentTypeId');
+
     for (final slotData in slotsData) {
       try {
         print('🔍 Processing slot data: $slotData');
-        final slot = AppointmentSlot.fromJson(slotData);
+
+        // Add date and appointment_type_id to slot data
+        final enhancedSlotData = Map<String, dynamic>.from(slotData);
+        enhancedSlotData['date'] = date;
+        enhancedSlotData['appointment_type_id'] = appointmentTypeId;
+
+        final slot = AppointmentSlot.fromJson(enhancedSlotData);
         slots.add(slot);
         print(
-            '🔍 Added slot: ${slot.formattedTime} (${slot.startTime}-${slot.endTime})');
+            '🔍 Added slot: ${slot.formattedTime} (${slot.startTime}-${slot.endTime}) with date=$date, appointmentTypeId=$appointmentTypeId');
       } catch (e) {
         print('❌ Failed to parse slot: $slotData - Error: $e');
       }
@@ -307,11 +330,11 @@ class DayAvailability {
         '🔍 Grouped slots by period: ${slotsByPeriod.map((k, v) => MapEntry(k, v.length))}');
 
     return DayAvailability(
-      date: json['date'] ?? '',
-      formattedDate: json['formatted_date'] ?? '',
-      dayName: json['day_name'] ?? '',
+      date: date,
+      formattedDate: data['formatted_date'] ?? json['formatted_date'] ?? '',
+      dayName: data['day_name'] ?? json['day_name'] ?? '',
       slots: slots,
-      totalSlots: json['total_slots'] ?? slots.length,
+      totalSlots: data['total_slots'] ?? json['total_slots'] ?? slots.length,
       slotsByPeriod: slotsByPeriod,
     );
   }

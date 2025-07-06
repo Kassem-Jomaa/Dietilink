@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/appointment_model.dart';
 import '../../../core/theme/app_theme.dart';
+import '../controllers/availability_controller.dart';
 
 /// Appointment Form Widget
 ///
@@ -32,7 +33,6 @@ class _AppointmentFormState extends State<AppointmentForm> {
   final _notesController = TextEditingController();
 
   late DateTime _selectedDate;
-  late TimeOfDay _selectedTime;
   late int _selectedTypeId;
 
   @override
@@ -44,15 +44,12 @@ class _AppointmentFormState extends State<AppointmentForm> {
   void _initializeForm() {
     if (widget.appointment != null) {
       _selectedDate = widget.appointment!.appointmentDate;
-      _selectedTime =
-          TimeOfDay.fromDateTime(widget.appointment!.appointmentDate);
       _selectedTypeId = widget.appointment!.appointmentTypeId;
       _reasonController.text = widget.appointment!.reason ?? '';
       _notesController.text = widget.appointment!.notes ?? '';
     } else {
       final now = DateTime.now();
       _selectedDate = now.add(const Duration(days: 1));
-      _selectedTime = const TimeOfDay(hour: 9, minute: 0);
       _selectedTypeId = 1; // Default to consultation
     }
   }
@@ -133,6 +130,8 @@ class _AppointmentFormState extends State<AppointmentForm> {
   }
 
   Widget _buildDateTimeSection() {
+    final availabilityController = Get.find<AvailabilityController>();
+
     return Row(
       children: [
         Expanded(
@@ -157,22 +156,37 @@ class _AppointmentFormState extends State<AppointmentForm> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: InkWell(
-            onTap: _selectTime,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Time', style: Get.textTheme.bodySmall),
-                  Text(_selectedTime.format(context),
-                      style: Get.textTheme.bodyMedium),
-                ],
-              ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.border),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Time', style: Get.textTheme.bodySmall),
+                Obx(() {
+                  final selectedSlot =
+                      availabilityController.selectedSlot.value;
+                  if (selectedSlot != null) {
+                    return Text(
+                      '${_formatTimeForDisplay(selectedSlot.startTime)} - ${_formatTimeForDisplay(selectedSlot.endTime)}',
+                      style: Get.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  } else {
+                    return Text(
+                      'No time selected',
+                      style: Get.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                    );
+                  }
+                }),
+              ],
             ),
           ),
         ),
@@ -213,28 +227,25 @@ class _AppointmentFormState extends State<AppointmentForm> {
     if (date != null) setState(() => _selectedDate = date);
   }
 
-  void _selectTime() async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (time != null) setState(() => _selectedTime = time);
-  }
-
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final appointmentDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
+      final availabilityController = Get.find<AvailabilityController>();
+      final selectedSlot = availabilityController.selectedSlot.value;
+
+      if (selectedSlot == null) {
+        Get.snackbar(
+          'Error',
+          'Please select a time slot from the availability calendar',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppTheme.error,
+          colorText: Colors.white,
+        );
+        return;
+      }
 
       final formData = AppointmentFormData(
-        appointmentDate: appointmentDateTime.toIso8601String().split('T')[0],
-        startTime:
-            '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+        appointmentDate: _selectedDate.toIso8601String().split('T')[0],
+        startTime: selectedSlot.startTime, // Use selected slot time
         appointmentTypeId: _selectedTypeId,
         notes: _notesController.text.trim(),
         dietitianId: 1, // Default dietitian ID
@@ -246,6 +257,22 @@ class _AppointmentFormState extends State<AppointmentForm> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  /// Format time for display (e.g., "09:30" -> "9:30 AM")
+  String _formatTimeForDisplay(String time) {
+    try {
+      final parts = time.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+
+      return '${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+    } catch (e) {
+      return time;
+    }
   }
 
   List<Map<String, dynamic>> _getAppointmentTypes() {

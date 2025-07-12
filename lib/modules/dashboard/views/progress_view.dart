@@ -14,7 +14,7 @@ class ProgressView extends StatelessWidget {
           slivers: [
             SliverAppBar(
               floating: true,
-              backgroundColor: AppTheme.background,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               elevation: 0,
               title: Text(
                 'Progress Overview',
@@ -37,11 +37,11 @@ class ProgressView extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  _buildQuickStatsCard(),
+                  _buildQuickStatsCard(context),
                   const SizedBox(height: 24),
-                  _buildActionButtons(),
+                  _buildActionButtons(context),
                   const SizedBox(height: 24),
-                  _buildRecentProgressCard(),
+                  _buildRecentProgressCard(context),
                 ]),
               ),
             ),
@@ -51,15 +51,15 @@ class ProgressView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickStatsCard() {
+  Widget _buildQuickStatsCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.violetBlue.withOpacity(0.1),
+            color: AppTheme.violetBlue.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -73,9 +73,9 @@ class ProgressView extends StatelessWidget {
             children: [
               Text(
                 'Progress Summary',
-                style: Get.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               GestureDetector(
                 onTap: () => Get.toNamed(Routes.PROGRESS),
@@ -88,10 +88,10 @@ class ProgressView extends StatelessWidget {
                   ),
                   child: Text(
                     'View All',
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.violetBlue,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.violetBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ),
@@ -102,6 +102,7 @@ class ProgressView extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatItem(
+                  context,
                   'Total Entries',
                   '0',
                   Icons.assessment,
@@ -111,10 +112,11 @@ class ProgressView extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatItem(
+                  context,
                   'Weight Change',
                   '0.0 kg',
                   Icons.trending_flat,
-                  AppTheme.textMuted,
+                  Colors.grey,
                 ),
               ),
             ],
@@ -124,8 +126,8 @@ class ProgressView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(
-      String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(BuildContext context, String label, String value,
+      IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -141,40 +143,41 @@ class ProgressView extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textMuted,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).hintColor,
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: Get.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Quick Actions',
-          style: Get.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
               child: _buildActionButton(
+                context,
                 'Add Progress',
                 'Record new measurements',
                 Icons.add_circle_outline,
@@ -185,6 +188,7 @@ class ProgressView extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
+                context,
                 'View History',
                 'Browse past entries',
                 Icons.history,
@@ -198,10 +202,11 @@ class ProgressView extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: _buildActionButton(
+            context,
             'Full Progress Dashboard',
             'Complete progress tracking with charts and analytics',
             Icons.dashboard,
-            AppTheme.success,
+            Colors.green,
             () => Get.toNamed(Routes.PROGRESS),
           ),
         ),
@@ -210,6 +215,7 @@ class ProgressView extends StatelessWidget {
   }
 
   Widget _buildActionButton(
+    BuildContext context,
     String title,
     String description,
     IconData icon,
@@ -222,7 +228,7 @@ class ProgressView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.cardBackground,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: color.withOpacity(0.2),
@@ -246,9 +252,9 @@ class ProgressView extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: Get.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ],
@@ -256,9 +262,9 @@ class ProgressView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               description,
-              style: Get.textTheme.bodySmall?.copyWith(
-                color: AppTheme.textMuted,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
             ),
           ],
         ),
@@ -266,15 +272,15 @@ class ProgressView extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentProgressCard() {
+  Widget _buildRecentProgressCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.violetBlue.withOpacity(0.1),
+            color: AppTheme.violetBlue.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -288,13 +294,13 @@ class ProgressView extends StatelessWidget {
             children: [
               Text(
                 'Recent Activity',
-                style: Get.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               TextButton(
                 onPressed: () => Get.toNamed(Routes.PROGRESS_HISTORY),
-                child: Text('View All'),
+                child: const Text('View All'),
               ),
             ],
           ),
@@ -316,19 +322,19 @@ class ProgressView extends StatelessWidget {
                   Icon(
                     Icons.analytics_outlined,
                     size: 32,
-                    color: AppTheme.textMuted,
+                    color: Theme.of(context).hintColor,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'No progress entries yet',
-                    style: Get.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textMuted,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).hintColor,
+                        ),
                   ),
                   const SizedBox(height: 4),
                   TextButton(
                     onPressed: () => Get.toNamed(Routes.ADD_PROGRESS),
-                    child: Text('Add your first entry'),
+                    child: const Text('Add your first entry'),
                   ),
                 ],
               ),

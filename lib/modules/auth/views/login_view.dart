@@ -94,23 +94,6 @@ class LoginView extends GetView<AuthController> {
                             : const Text('Login'),
                       )),
                   const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: () async {
-                      usernameController.text = controller.testUsername;
-                      passwordController.text = controller.testPassword;
-                      final success = await controller.login(
-                        controller.testUsername,
-                        controller.testPassword,
-                      );
-                      if (success) {
-                        Get.offAllNamed('/dashboard');
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Use Test Account'),
-                  ),
                   const SizedBox(height: 16),
                   Obx(() => controller.errorMessage.value.isNotEmpty
                       ? Container(

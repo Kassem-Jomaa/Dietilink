@@ -12,33 +12,41 @@ class ProfileView extends GetView<ProfileController> {
   const ProfileView({Key? key}) : super(key: key);
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text('Profile', style: theme.textTheme.titleLarge),
+        backgroundColor: theme.cardColor,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: Icon(Icons.edit, color: theme.iconTheme.color),
             onPressed: () => Get.toNamed('/profile/edit'),
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: Icon(Icons.logout, color: theme.iconTheme.color),
             onPressed: () {
               Get.dialog(
                 AlertDialog(
-                  title: const Text('Logout'),
-                  content: const Text('Are you sure you want to logout?'),
+                  title: Text('Logout', style: theme.textTheme.titleMedium),
+                  content: Text('Are you sure you want to logout?',
+                      style: theme.textTheme.bodyMedium),
+                  backgroundColor: theme.cardColor,
                   actions: [
                     TextButton(
                       onPressed: () => Get.back(),
-                      child: const Text('Cancel'),
+                      child: Text('Cancel', style: theme.textTheme.bodyMedium),
                     ),
                     TextButton(
                       onPressed: () {
                         Get.back();
                         Get.find<AuthController>().logout();
                       },
-                      child: const Text('Logout'),
+                      child: Text('Logout', style: theme.textTheme.bodyMedium),
                     ),
                   ],
                 ),
@@ -60,7 +68,8 @@ class ProfileView extends GetView<ProfileController> {
                 onRetry: controller.loadProfile,
               ),
               const SizedBox(height: 16),
-              const Text('Showing basic profile data:'),
+              Text('Showing basic profile data:',
+                  style: theme.textTheme.bodyMedium),
               const SizedBox(height: 16),
             ],
           );
@@ -68,13 +77,14 @@ class ProfileView extends GetView<ProfileController> {
 
         final profile = controller.profile.value;
         if (profile == null) {
-          return const Center(child: Text('No profile data available'));
+          return Center(
+              child: Text('No profile data available',
+                  style: theme.textTheme.bodyMedium));
         }
 
         return SingleChildScrollView(
           child: Column(
             children: [
-              // User Info Section
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -85,30 +95,24 @@ class ProfileView extends GetView<ProfileController> {
                   ],
                 ),
               ),
-              // Tabbed Content with fixed height
               SizedBox(
-                height: 600, // Fixed height for tabs to ensure proper scrolling
+                height: 600,
                 child: DefaultTabController(
                   length: 3,
                   child: Column(
                     children: [
                       TabBar(
                         labelColor: AppTheme.violetBlue,
-                        unselectedLabelColor: AppTheme.textMuted,
+                        unselectedLabelColor: theme.hintColor,
                         indicatorColor: AppTheme.violetBlue,
                         tabs: const [
+                          Tab(icon: Icon(Icons.person), text: 'Basic Info'),
                           Tab(
-                            icon: Icon(Icons.person),
-                            text: 'Basic Info',
-                          ),
+                              icon: Icon(Icons.medical_services),
+                              text: 'Medical'),
                           Tab(
-                            icon: Icon(Icons.medical_services),
-                            text: 'Medical',
-                          ),
-                          Tab(
-                            icon: Icon(Icons.restaurant),
-                            text: 'Food History',
-                          ),
+                              icon: Icon(Icons.restaurant),
+                              text: 'Food History'),
                         ],
                       ),
                       Expanded(
@@ -129,14 +133,9 @@ class ProfileView extends GetView<ProfileController> {
         );
       }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showQuickActionsMenu(context);
-        },
+        onPressed: () => _showQuickActionsMenu(context),
         backgroundColor: AppTheme.violetBlue,
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
         tooltip: 'Quick Actions',
       ),
     );

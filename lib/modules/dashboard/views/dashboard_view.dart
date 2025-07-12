@@ -87,9 +87,13 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     // Initialize meal plan controller when dashboard loads
     Get.put(MealPlanController());
+
+    final theme = Theme.of(context); // 👈 Access current theme
+    final cardColor = theme.cardColor;
 
     return Scaffold(
       body: _getCurrentView(),
@@ -102,10 +106,10 @@ class _DashboardViewState extends State<DashboardView>
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppTheme.cardBackground,
+          color: cardColor, // 👈 Dynamic card background
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withOpacity(0.1), // 👈 Corrected
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -130,174 +134,173 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _buildHomeView() {
+    final theme = Theme.of(context);
+
     return SafeArea(
-        child: FadeTransition(
-      opacity: _fadeAnimation,
-      child: RefreshIndicator(
-        onRefresh: () async {
-          await _dashboardController.refreshDashboard();
-        },
-        child: CustomScrollView(
-          slivers: [
-            // Custom App Bar
-            SliverAppBar(
-              floating: true,
-              backgroundColor: AppTheme.background,
-              elevation: 0,
-              expandedHeight: 120,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  padding: const EdgeInsets.all(24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await _dashboardController.refreshDashboard();
+          },
+          child: CustomScrollView(
+            slivers: [
+              // Custom App Bar
+              SliverAppBar(
+                floating: true,
+                backgroundColor: theme.scaffoldBackgroundColor,
+                elevation: 0,
+                expandedHeight: 120,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Good Morning, ${Get.find<AuthController>().currentUser.value?.name ?? 'User'}',
+                                style: theme.textTheme.displayMedium?.copyWith(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Today, ${DateTime.now().toString().split(' ')[0]}',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withOpacity(0.6),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Good Morning, ${Get.find<AuthController>().currentUser.value?.name ?? 'User'}',
-                              style: Get.textTheme.displayMedium?.copyWith(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                            const ThemeToggle(),
+                            const SizedBox(width: 8),
+                            Hero(
+                              tag: 'user_avatar',
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          AppTheme.violetBlue.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: AppTheme.violetBlue,
+                                  child: const Icon(Icons.person,
+                                      color: Colors.white, size: 28),
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Today, ${DateTime.now().toString().split(' ')[0]}',
-                              style: Get.textTheme.bodyLarge?.copyWith(
-                                color: AppTheme.textMuted,
-                              ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Theme Toggle Button
-                          const ThemeToggle(),
-                          const SizedBox(width: 8),
-
-                          const SizedBox(width: 8),
-                          // User Avatar
-                          Hero(
-                            tag: 'user_avatar',
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.violetBlue
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: CircleAvatar(
-                                radius: 24,
-                                backgroundColor: AppTheme.violetBlue,
-                                child: const Icon(Icons.person,
-                                    color: Colors.white, size: 28),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Dashboard Content
-            SliverPadding(
-              padding: const EdgeInsets.all(24),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Quick Stats Grid
-                  Obx(() {
-                    if (_dashboardController.isLoading.value) {
-                      return const SizedBox(
-                        height: 200,
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
+              // Dashboard Content
+              SliverPadding(
+                padding: const EdgeInsets.all(24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Quick Stats Grid
+                    Obx(() {
+                      if (_dashboardController.isLoading.value) {
+                        return const SizedBox(
+                          height: 200,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
 
-                    return GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 1.5,
-                      children: [
-                        _buildStatCard(
-                          'Current Weight',
-                          _dashboardController.currentWeight,
-                          'kg',
-                          AppTheme.violetBlue,
-                          Icons.monitor_weight_outlined,
-                        ),
-                        _buildStatCard(
-                          'Goal Weight',
-                          _dashboardController.goalWeight,
-                          'kg',
-                          AppTheme.tealCyan,
-                          Icons.flag_outlined,
-                        ),
-                        _buildStatCard(
-                          'Days Left',
-                          _dashboardController.daysLeft,
-                          'days',
-                          AppTheme.skyBlue,
-                          Icons.calendar_today_outlined,
-                        ),
-                        _buildStatCard(
-                          'Progress',
-                          _dashboardController.progressPercentage,
-                          '%',
-                          AppTheme.limeGreen,
-                          Icons.trending_up_outlined,
-                        ),
-                      ],
-                    );
-                  }),
-                  const SizedBox(height: 32),
-                  // Progress Summary Card
-                  _buildProgressCard(context),
-                  const SizedBox(height: 24),
-                  // Meal Plan Card
-                  _buildMealPlanCard(context),
-                  const SizedBox(height: 24),
-                  // Appointments Card
-                  _buildAppointmentsCard(context),
-                  const SizedBox(height: 24),
-                  // Upcoming Appointments
-                  _buildUpcomingAppointments(context),
-                ]),
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 1.5,
+                        children: [
+                          _buildStatCard(
+                            'Current Weight',
+                            _dashboardController.currentWeight,
+                            'kg',
+                            AppTheme.violetBlue,
+                            Icons.monitor_weight_outlined,
+                          ),
+                          _buildStatCard(
+                            'Goal Weight',
+                            _dashboardController.goalWeight,
+                            'kg',
+                            AppTheme.tealCyan,
+                            Icons.flag_outlined,
+                          ),
+                          _buildStatCard(
+                            'Days Left',
+                            _dashboardController.daysLeft,
+                            'days',
+                            AppTheme.skyBlue,
+                            Icons.calendar_today_outlined,
+                          ),
+                          _buildStatCard(
+                            'Progress',
+                            _dashboardController.progressPercentage,
+                            '%',
+                            AppTheme.limeGreen,
+                            Icons.trending_up_outlined,
+                          ),
+                        ],
+                      );
+                    }),
+                    const SizedBox(height: 32),
+                    _buildProgressCard(context),
+                    const SizedBox(height: 24),
+                    _buildMealPlanCard(context),
+                    const SizedBox(height: 24),
+                    _buildAppointmentsCard(context),
+                    const SizedBox(height: 24),
+                    _buildUpcomingAppointments(context),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildStatCard(
       String title, String value, String unit, Color color, IconData icon) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
+        color: theme.cardColor, // 👈 dynamic background
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.1),
+            color:
+                color.withOpacity(0.1), // 👈 fixed .withValues → .withOpacity
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -312,8 +315,9 @@ class _DashboardViewState extends State<DashboardView>
               const SizedBox(width: 8),
               Text(
                 title,
-                style: Get.textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textMuted,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color
+                      ?.withOpacity(0.6), // 👈 dynamic muted color
                 ),
               ),
             ],
@@ -324,7 +328,7 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               Text(
                 value,
-                style: Get.textTheme.displaySmall?.copyWith(
+                style: theme.textTheme.displaySmall?.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
                 ),
@@ -334,8 +338,9 @@ class _DashboardViewState extends State<DashboardView>
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   unit,
-                  style: Get.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textMuted,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color
+                        ?.withOpacity(0.6), // 👈 consistent with title
                   ),
                 ),
               ),
@@ -347,14 +352,16 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _buildProgressCard(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.violetBlue.withValues(alpha: 0.1),
+            color: AppTheme.violetBlue.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -368,7 +375,7 @@ class _DashboardViewState extends State<DashboardView>
             children: [
               Text(
                 'Progress Summary',
-                style: Get.textTheme.titleLarge?.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -376,7 +383,7 @@ class _DashboardViewState extends State<DashboardView>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.violetBlue.withValues(alpha: 0.1),
+                  color: AppTheme.violetBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -391,125 +398,128 @@ class _DashboardViewState extends State<DashboardView>
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 150,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: AppTheme.cardBackground,
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
+            height: 200,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: LineChart(
+                LineChartData(
+                  clipData: FlClipData.all(),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 1,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: theme.cardColor,
+                        strokeWidth: 1,
+                      );
+                    },
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        const days = [
-                          'Mon',
-                          'Tue',
-                          'Wed',
-                          'Thu',
-                          'Fri',
-                          'Sat',
-                          'Sun'
-                        ];
-                        if (value >= 0 && value < days.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              days[value.toInt()],
-                              style: TextStyle(
-                                color: AppTheme.textMuted,
-                                fontSize: 12,
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          const days = [
+                            'Mon',
+                            'Tue',
+                            'Wed',
+                            'Thu',
+                            'Fri',
+                            'Sat',
+                            'Sun'
+                          ];
+                          if (value >= 0 && value < days.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                days[value.toInt()],
+                                style: TextStyle(
+                                  color: theme.textTheme.bodySmall?.color
+                                      ?.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                        return const Text('');
-                      },
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
                     ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 20,
+                        reservedSize: 42,
+                        getTitlesWidget: (value, meta) => Text(
                           value.toStringAsFixed(1),
                           style: TextStyle(
-                            color: AppTheme.textMuted,
+                            color: theme.textTheme.bodySmall?.color
+                                ?.withOpacity(0.6),
                             fontSize: 12,
                           ),
-                        );
-                      },
-                      reservedSize: 42,
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: false,
-                ),
-                minX: 0,
-                maxX: 6,
-                minY: 74,
-                maxY: 77,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: chartSpots,
-                    isCurved: true,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.violetBlue.withValues(alpha: 0.5),
-                        AppTheme.violetBlue,
-                      ],
-                    ),
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 4,
-                          color: AppTheme.violetBlue,
-                          strokeWidth: 2,
-                          strokeColor: Colors.white,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.violetBlue.withValues(alpha: 0.2),
-                          AppTheme.violetBlue.withValues(alpha: 0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                        ),
                       ),
                     ),
                   ),
-                ],
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                        color: Colors.grey.withOpacity(0.3), width: 1),
+                  ),
+                  minX: 0,
+                  maxX: 6,
+                  minY: 0,
+                  maxY: 150,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: chartSpots,
+                      isCurved: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.violetBlue.withOpacity(0.5),
+                          AppTheme.violetBlue,
+                        ],
+                      ),
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: AppTheme.violetBlue,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          );
+                        },
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.violetBlue.withOpacity(0.2),
+                            AppTheme.violetBlue.withOpacity(0.0),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           const SizedBox(height: 20),
           Obx(() {
-            final latestProgress = _dashboardController.latestProgress.value;
             final weightChange = _dashboardController.weightChange;
             final totalEntries = _dashboardController.totalEntries;
 
@@ -525,14 +535,15 @@ class _DashboardViewState extends State<DashboardView>
                         children: [
                           Text(
                             'Weight Change',
-                            style: Get.textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textMuted,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color
+                                  ?.withOpacity(0.6),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '$weightChange kg',
-                            style: Get.textTheme.bodyMedium?.copyWith(
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w500,
                               color: weightChange.startsWith('-')
                                   ? AppTheme.success
@@ -549,14 +560,15 @@ class _DashboardViewState extends State<DashboardView>
                         children: [
                           Text(
                             'Total Entries',
-                            style: Get.textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textMuted,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color
+                                  ?.withOpacity(0.6),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '$totalEntries',
-                            style: Get.textTheme.bodyMedium?.copyWith(
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -582,7 +594,7 @@ class _DashboardViewState extends State<DashboardView>
                           ),
                         ),
                         icon: const Icon(Icons.arrow_forward, size: 16),
-                        label: Text('View Details'),
+                        label: const Text('View Details'),
                       ),
                     ),
                   ],
@@ -596,23 +608,23 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _buildMealPlanCard(BuildContext context) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const MealPlanView(),
-          ),
+          MaterialPageRoute(builder: (context) => const MealPlanView()),
         );
       },
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.cardBackground,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.tealCyan.withValues(alpha: 0.1),
+              color: AppTheme.tealCyan.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -629,28 +641,25 @@ class _DashboardViewState extends State<DashboardView>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.tealCyan.withValues(alpha: 0.1),
+                        color: AppTheme.tealCyan.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        Icons.restaurant_menu,
-                        color: AppTheme.tealCyan,
-                        size: 20,
-                      ),
+                      child: Icon(Icons.restaurant_menu,
+                          color: AppTheme.tealCyan, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Text(
                       'Meal Plan',
-                      style: Get.textTheme.titleLarge?.copyWith(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: AppTheme.textMuted,
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                   size: 16,
                 ),
               ],
@@ -664,15 +673,17 @@ class _DashboardViewState extends State<DashboardView>
                     children: [
                       Text(
                         'Today\'s Nutrition',
-                        style: Get.textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textMuted,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.textTheme.bodySmall?.color
+                              ?.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'View your personalized meal plan',
-                        style: Get.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textMuted,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.textTheme.bodySmall?.color
+                              ?.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -682,7 +693,7 @@ class _DashboardViewState extends State<DashboardView>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.tealCyan.withValues(alpha: 0.1),
+                    color: AppTheme.tealCyan.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -703,6 +714,8 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _buildAppointmentsCard(BuildContext context) {
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () {
         Get.toNamed('/appointments');
@@ -710,11 +723,11 @@ class _DashboardViewState extends State<DashboardView>
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.cardBackground,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.skyBlue.withValues(alpha: 0.1),
+              color: AppTheme.skyBlue.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -731,7 +744,7 @@ class _DashboardViewState extends State<DashboardView>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.skyBlue.withValues(alpha: 0.1),
+                        color: AppTheme.skyBlue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -743,16 +756,16 @@ class _DashboardViewState extends State<DashboardView>
                     const SizedBox(width: 12),
                     Text(
                       'Appointments',
-                      style: Get.textTheme.titleLarge?.copyWith(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: AppTheme.textMuted,
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                   size: 16,
                 ),
               ],
@@ -766,15 +779,17 @@ class _DashboardViewState extends State<DashboardView>
                     children: [
                       Text(
                         'Health Consultations',
-                        style: Get.textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textMuted,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.textTheme.bodySmall?.color
+                              ?.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Book and manage your appointments',
-                        style: Get.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textMuted,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.textTheme.bodySmall?.color
+                              ?.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -784,7 +799,7 @@ class _DashboardViewState extends State<DashboardView>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.skyBlue.withValues(alpha: 0.1),
+                    color: AppTheme.skyBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -805,6 +820,19 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget _buildUpcomingAppointments(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isSmallScreen = width < 360;
+
+    // Detect brightness mode
+    final isLightMode = Get.theme.brightness == Brightness.light;
+
+    // Define colors based on light or dark mode
+    final cardBackgroundColor =
+        isLightMode ? Colors.white : AppTheme.cardBackground;
+    final mutedTextColor = isLightMode ? Colors.grey[600]! : AppTheme.textMuted;
+    final borderColor =
+        isLightMode ? Colors.grey[300]! : AppTheme.cardBackground;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -812,14 +840,16 @@ class _DashboardViewState extends State<DashboardView>
           'Upcoming Appointments',
           style: Get.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
+            fontSize: isSmallScreen ? 16 : 20,
+            color: isLightMode ? Colors.black87 : null,
           ),
         ),
         const SizedBox(height: 16),
         Obx(() {
           if (_dashboardController.isLoadingUpcomingAppointments.value) {
-            return const SizedBox(
-              height: 200,
-              child: Center(child: CircularProgressIndicator()),
+            return SizedBox(
+              height: isSmallScreen ? 150 : 200,
+              child: const Center(child: CircularProgressIndicator()),
             );
           }
 
@@ -827,41 +857,44 @@ class _DashboardViewState extends State<DashboardView>
 
           if (appointments.isEmpty) {
             return Container(
-              height: 120,
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+              margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
+                color: cardBackgroundColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.cardBackground,
+                  color: borderColor,
                   width: 1,
                 ),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.event,
-                      size: 32,
-                      color: AppTheme.textMuted,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.event,
+                    size: isSmallScreen ? 28 : 32,
+                    color: mutedTextColor,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No upcoming appointments',
+                    textAlign: TextAlign.center,
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: mutedTextColor,
+                      fontSize: isSmallScreen ? 13 : 15,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'No upcoming appointments',
-                      style: Get.textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your appointments will appear here',
+                    textAlign: TextAlign.center,
+                    style: Get.textTheme.bodySmall?.copyWith(
+                      color: mutedTextColor,
+                      fontSize: isSmallScreen ? 11 : 13,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Your appointments will appear here',
-                      style: Get.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           }
@@ -873,32 +906,36 @@ class _DashboardViewState extends State<DashboardView>
             itemCount: appointments.length,
             itemBuilder: (context, index) {
               final appointment = appointments[index];
+              final isConfirmed =
+                  appointment.status == AppointmentStatus.confirmed;
+
               return Container(
-                key: ValueKey('appointment_${appointment.id}'),
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                 decoration: BoxDecoration(
-                  color: Get.theme.cardColor,
+                  color: isLightMode ? Colors.white : Get.theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Get.theme.dividerColor.withValues(alpha: 0.1),
+                    color: (isLightMode
+                            ? Colors.grey[300]!
+                            : Get.theme.dividerColor)
+                        .withOpacity(0.1),
                   ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
                       decoration: BoxDecoration(
-                        color: appointment.status == AppointmentStatus.confirmed
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
+                        color: isConfirmed
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.event,
-                        color: appointment.status == AppointmentStatus.confirmed
-                            ? Colors.green
-                            : Colors.orange,
+                        size: isSmallScreen ? 20 : 24,
+                        color: isConfirmed ? Colors.green : Colors.orange,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -910,23 +947,24 @@ class _DashboardViewState extends State<DashboardView>
                             appointment.typeText,
                             style: Get.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w500,
+                              fontSize: isSmallScreen ? 13 : 15,
+                              color: isLightMode ? Colors.black87 : null,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             appointment.dietitianName ?? 'Unknown Dietitian',
                             style: Get.textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textMuted,
+                              color: mutedTextColor,
+                              fontSize: isSmallScreen ? 12 : 14,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             appointment.displayTime,
                             style: Get.textTheme.bodySmall?.copyWith(
-                              color: appointment.status ==
-                                      AppointmentStatus.confirmed
-                                  ? Colors.green
-                                  : Colors.orange,
+                              fontSize: isSmallScreen ? 12 : 13,
+                              color: isConfirmed ? Colors.green : Colors.orange,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -934,23 +972,21 @@ class _DashboardViewState extends State<DashboardView>
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 6 : 8,
+                        vertical: isSmallScreen ? 2 : 4,
                       ),
                       decoration: BoxDecoration(
-                        color: appointment.status == AppointmentStatus.confirmed
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
+                        color: isConfirmed
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.orange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         appointment.statusText,
                         style: Get.textTheme.bodySmall?.copyWith(
-                          color:
-                              appointment.status == AppointmentStatus.confirmed
-                                  ? Colors.green
-                                  : Colors.orange,
+                          fontSize: isSmallScreen ? 11 : 13,
+                          color: isConfirmed ? Colors.green : Colors.orange,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1007,13 +1043,27 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   void _showQuickActions(BuildContext context) {
+    final isLightMode = Get.theme.brightness == Brightness.light;
+
+    // Define dynamic colors for light and dark modes
+    final backgroundColor = isLightMode ? Colors.white : Get.theme.cardColor;
+    final textMutedColor = isLightMode ? Colors.grey[600]! : AppTheme.textMuted;
+
+    final violetBlueBackground = isLightMode
+        ? AppTheme.violetBlue.withOpacity(0.1)
+        : AppTheme.violetBlue.withOpacity(0.3);
+
+    final skyBlueBackground = isLightMode
+        ? AppTheme.skyBlue.withOpacity(0.1)
+        : AppTheme.skyBlue.withOpacity(0.3);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1023,7 +1073,7 @@ class _DashboardViewState extends State<DashboardView>
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: AppTheme.textMuted,
+                color: textMutedColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1031,13 +1081,20 @@ class _DashboardViewState extends State<DashboardView>
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.violetBlue.withValues(alpha: 0.1),
+                  color: violetBlueBackground,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.chat, color: AppTheme.violetBlue),
               ),
-              title: const Text('AI Chatbot'),
-              subtitle: const Text('Get nutrition advice'),
+              title: Text(
+                'AI Chatbot',
+                style: TextStyle(
+                    color: isLightMode ? Colors.black87 : Colors.white),
+              ),
+              subtitle: Text(
+                'Get nutrition advice',
+                style: TextStyle(color: textMutedColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Get.toNamed('/chatbot');
@@ -1047,13 +1104,20 @@ class _DashboardViewState extends State<DashboardView>
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.skyBlue.withValues(alpha: 0.1),
+                  color: skyBlueBackground,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.event, color: AppTheme.skyBlue),
               ),
-              title: const Text('Book Appointment'),
-              subtitle: const Text('Schedule health consultation'),
+              title: Text(
+                'Book Appointment',
+                style: TextStyle(
+                    color: isLightMode ? Colors.black87 : Colors.white),
+              ),
+              subtitle: Text(
+                'Schedule health consultation',
+                style: TextStyle(color: textMutedColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Get.toNamed('/appointments/book');

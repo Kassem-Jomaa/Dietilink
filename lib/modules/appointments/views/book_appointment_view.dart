@@ -507,12 +507,50 @@ class BookAppointmentView extends GetView<AppointmentsController> {
         return;
       }
 
+      // Validate that the selected date has availability
+      final availabilitySelectedDate =
+          availabilityController.selectedDate.value;
+      if (availabilitySelectedDate != null) {
+        final dateString =
+            availabilitySelectedDate.toIso8601String().split('T')[0];
+        final days =
+            availabilityController.selection.value.currentWeek?.days ?? [];
+        final dayAvailability =
+            days.where((day) => day.date == dateString).firstOrNull;
+
+        if (dayAvailability == null || !dayAvailability.hasAvailability) {
+          print('❌ BookAppointmentView: Selected date has no availability');
+          Get.snackbar(
+            'Date Not Available',
+            'The selected date has no available slots. Please choose another date.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppTheme.error,
+            colorText: Colors.white,
+          );
+          return;
+        }
+      }
+
       print('🔍 BookAppointmentView: Setting form data in controller');
-      // Set the form data in controller using the selected slot
-      controller.setSelectedDate(DateTime.parse(formData.appointmentDate));
-      controller
-          .setSelectedTime(selectedSlot.startTime); // Use selected slot time
-      controller.notes.value = formData.notes;
+      // Set the form data in controller using the availability controller's date and selected slot
+      final selectedDate = availabilityController.selectedDate.value;
+      if (selectedDate != null) {
+        controller.setSelectedDate(selectedDate);
+        controller
+            .setSelectedTime(selectedSlot.startTime); // Use selected slot time
+        controller.notes.value = formData.notes;
+      } else {
+        print(
+            '❌ BookAppointmentView: No date selected in availability controller');
+        Get.snackbar(
+          'Error',
+          'Please select a date from the availability calendar',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppTheme.error,
+          colorText: Colors.white,
+        );
+        return;
+      }
 
       print('🔍 BookAppointmentView: Calling controller.bookAppointment()');
       print('🔍 BookAppointmentView: Using time: ${selectedSlot.startTime}');
@@ -615,7 +653,12 @@ class BookAppointmentView extends GetView<AppointmentsController> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Booking Successful!'),
+            Expanded(
+              child: const Text(
+                'Booking Successful!',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: const Text(

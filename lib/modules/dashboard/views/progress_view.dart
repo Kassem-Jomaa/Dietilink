@@ -141,11 +141,14 @@ class ProgressView extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).hintColor,
-                    ),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).hintColor,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -306,7 +309,7 @@ class ProgressView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Container(
-            height: 120,
+            height: 125,
             decoration: BoxDecoration(
               color: AppTheme.violetBlue.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
@@ -318,6 +321,7 @@ class ProgressView extends StatelessWidget {
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.analytics_outlined,

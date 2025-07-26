@@ -64,11 +64,14 @@ class AppointmentCard extends StatelessWidget {
                               color: AppTheme.textMuted,
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              appointment.formattedDate,
-                              style: Get.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textMain,
+                            Expanded(
+                              child: Text(
+                                appointment.formattedDate,
+                                style: Get.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textMain,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -82,10 +85,13 @@ class AppointmentCard extends StatelessWidget {
                               color: AppTheme.textMuted,
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              appointment.formattedTime,
-                              style: Get.textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textMuted,
+                            Expanded(
+                              child: Text(
+                                appointment.formattedTime,
+                                style: Get.textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.textMuted,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -137,21 +143,26 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   if (appointment.doctorName != null)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person,
-                          size: 16,
-                          color: AppTheme.textMuted,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          appointment.doctorName!,
-                          style: Get.textTheme.bodySmall?.copyWith(
+                    Flexible(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 16,
                             color: AppTheme.textMuted,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              appointment.doctorName!,
+                              style: Get.textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textMuted,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),

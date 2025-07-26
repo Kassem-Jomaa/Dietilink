@@ -63,7 +63,7 @@ class _DashboardViewState extends State<DashboardView>
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
-  }
+  } 
 
   @override
   void dispose() {
@@ -309,28 +309,36 @@ class _DashboardViewState extends State<DashboardView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color
-                      ?.withOpacity(0.6), // 👈 dynamic muted color
+          Flexible(
+            child: Row(
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.textTheme.bodySmall?.color
+                          ?.withOpacity(0.6), // 👈 dynamic muted color
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const Spacer(),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                value,
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  value,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
@@ -373,12 +381,16 @@ class _DashboardViewState extends State<DashboardView>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Progress Summary',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'Progress Summary',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -539,6 +551,7 @@ class _DashboardViewState extends State<DashboardView>
                               color: theme.textTheme.bodySmall?.color
                                   ?.withOpacity(0.6),
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -549,11 +562,12 @@ class _DashboardViewState extends State<DashboardView>
                                   ? AppTheme.success
                                   : AppTheme.warning,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,6 +578,7 @@ class _DashboardViewState extends State<DashboardView>
                               color: theme.textTheme.bodySmall?.color
                                   ?.withOpacity(0.6),
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -571,11 +586,12 @@ class _DashboardViewState extends State<DashboardView>
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: ElevatedButton.icon(
                         onPressed: () => Get.toNamed('/progress'),
@@ -583,18 +599,18 @@ class _DashboardViewState extends State<DashboardView>
                           backgroundColor: AppTheme.violetBlue,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                              horizontal: 8, vertical: 6),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           textStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
-                        icon: const Icon(Icons.arrow_forward, size: 16),
-                        label: const Text('View Details'),
+                        icon: const Icon(Icons.arrow_forward, size: 14),
+                        label: const Text('View'),
                       ),
                     ),
                   ],
@@ -636,27 +652,33 @@ class _DashboardViewState extends State<DashboardView>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.tealCyan.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.tealCyan.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.restaurant_menu,
+                            color: AppTheme.tealCyan, size: 20),
                       ),
-                      child: Icon(Icons.restaurant_menu,
-                          color: AppTheme.tealCyan, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Meal Plan',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.textTheme.bodyLarge?.color,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Meal Plan',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Icon(
                   Icons.arrow_forward_ios,
                   color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
@@ -739,30 +761,36 @@ class _DashboardViewState extends State<DashboardView>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.skyBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.skyBlue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.event,
+                          color: AppTheme.skyBlue,
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.event,
-                        color: AppTheme.skyBlue,
-                        size: 20,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Appointments',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Appointments',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Icon(
                   Icons.arrow_forward_ios,
                   color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),

@@ -4,6 +4,7 @@ import '../controllers/profile_controller.dart';
 import '../../../core/widgets/loading_indicator.dart';
 import '../../../core/widgets/error_message.dart';
 import '../../../core/theme/app_theme.dart';
+import 'change_password_view.dart';
 
 class EditProfileView extends GetView<ProfileController> {
   const EditProfileView({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class EditProfileView extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     // Clear any existing temp form data when entering edit mode
     controller.clearTempFormData();
-    
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -406,6 +407,23 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
             ),
             const SizedBox(height: 32),
 
+            // Add Change Password Button here
+            OutlinedButton.icon(
+              onPressed: () {
+                Get.to(() => const ChangePasswordView());
+              },
+              icon: const Icon(Icons.lock_outline),
+              label: const Text('Change Password'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: const BorderSide(color: AppTheme.violetBlue),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Navigation Buttons
             Row(
               children: [
@@ -624,9 +642,10 @@ class _MedicalHistoryTabState extends State<MedicalHistoryTab> {
 
   void _setupFormListeners() {
     final controller = Get.find<ProfileController>();
-    
+
     _medicalConditionsController.addListener(() {
-      controller.updateTempFormData('medical_conditions', _medicalConditionsController.text);
+      controller.updateTempFormData(
+          'medical_conditions', _medicalConditionsController.text);
     });
     _allergiesController.addListener(() {
       controller.updateTempFormData('allergies', _allergiesController.text);
@@ -641,10 +660,12 @@ class _MedicalHistoryTabState extends State<MedicalHistoryTab> {
       controller.updateTempFormData('gi_symptoms', _giSymptomsController.text);
     });
     _bloodTestController.addListener(() {
-      controller.updateTempFormData('recent_blood_test', _bloodTestController.text);
+      controller.updateTempFormData(
+          'recent_blood_test', _bloodTestController.text);
     });
     _vitaminIntakeController.addListener(() {
-      controller.updateTempFormData('vitamin_intake', _vitaminIntakeController.text);
+      controller.updateTempFormData(
+          'vitamin_intake', _vitaminIntakeController.text);
     });
   }
 
@@ -925,30 +946,38 @@ class _FoodHistoryTabState extends State<FoodHistoryTab> {
 
   void _setupFormListeners() {
     final controller = Get.find<ProfileController>();
-    
+
     _dietaryPreferencesController.addListener(() {
-      controller.updateTempFormData('dietary_preferences', _dietaryPreferencesController.text);
+      controller.updateTempFormData(
+          'dietary_preferences', _dietaryPreferencesController.text);
     });
     _alcoholIntakeController.addListener(() {
-      controller.updateTempFormData('alcohol_intake', _alcoholIntakeController.text);
+      controller.updateTempFormData(
+          'alcohol_intake', _alcoholIntakeController.text);
     });
     _coffeeIntakeController.addListener(() {
-      controller.updateTempFormData('coffee_intake', _coffeeIntakeController.text);
+      controller.updateTempFormData(
+          'coffee_intake', _coffeeIntakeController.text);
     });
     _previousDietsController.addListener(() {
-      controller.updateTempFormData('previous_diets', _previousDietsController.text);
+      controller.updateTempFormData(
+          'previous_diets', _previousDietsController.text);
     });
     _weightHistoryController.addListener(() {
-      controller.updateTempFormData('weight_history', _weightHistoryController.text);
+      controller.updateTempFormData(
+          'weight_history', _weightHistoryController.text);
     });
     _dailyRoutineController.addListener(() {
-      controller.updateTempFormData('daily_routine', _dailyRoutineController.text);
+      controller.updateTempFormData(
+          'daily_routine', _dailyRoutineController.text);
     });
     _physicalActivityController.addListener(() {
-      controller.updateTempFormData('physical_activity_details', _physicalActivityController.text);
+      controller.updateTempFormData(
+          'physical_activity_details', _physicalActivityController.text);
     });
     _subscriptionReasonController.addListener(() {
-      controller.updateTempFormData('subscription_reason', _subscriptionReasonController.text);
+      controller.updateTempFormData(
+          'subscription_reason', _subscriptionReasonController.text);
     });
     _additionalNotesController.addListener(() {
       controller.updateTempFormData('notes', _additionalNotesController.text);

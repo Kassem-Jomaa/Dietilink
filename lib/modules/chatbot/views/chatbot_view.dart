@@ -136,29 +136,34 @@ class _ChatbotViewState extends State<ChatbotView>
             ),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Nutrilink Assistant',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: AppTheme.textPrimary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Nutrilink Assistant',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppTheme.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Obx(() => Text(
-                    controller.isPythonServerAvailable.value
-                        ? 'Connected'
-                        : 'Connecting...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: controller.isPythonServerAvailable.value
-                          ? AppTheme.success
-                          : AppTheme.warning,
-                    ),
-                  )),
-            ],
+                Obx(() => Text(
+                      controller.isPythonServerAvailable.value
+                          ? 'Connected'
+                          : 'Connecting...',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: controller.isPythonServerAvailable.value
+                            ? AppTheme.success
+                            : AppTheme.warning,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    )),
+              ],
+            ),
           ),
         ],
       ),

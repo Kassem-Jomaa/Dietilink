@@ -147,8 +147,22 @@ class _AppointmentFormState extends State<AppointmentForm> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Date', style: Get.textTheme.bodySmall),
-                  Text(_formatDate(_selectedDate),
-                      style: Get.textTheme.bodyMedium),
+                  Obx(() {
+                    final selectedDate =
+                        availabilityController.selectedDate.value;
+                    if (selectedDate != null) {
+                      return Text(_formatDate(selectedDate),
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ));
+                    } else {
+                      return Text('No date selected',
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textMuted,
+                          ));
+                    }
+                  }),
                 ],
               ),
             ),
@@ -218,19 +232,26 @@ class _AppointmentFormState extends State<AppointmentForm> {
   }
 
   void _selectDate() async {
+    final availabilityController = Get.find<AvailabilityController>();
+    final initialDate =
+        availabilityController.selectedDate.value ?? DateTime.now();
+
     final date = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: initialDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
     );
-    if (date != null) setState(() => _selectedDate = date);
+    if (date != null) {
+      availabilityController.setSelectedDate(date);
+    }
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final availabilityController = Get.find<AvailabilityController>();
       final selectedSlot = availabilityController.selectedSlot.value;
+      final selectedDate = availabilityController.selectedDate.value;
 
       if (selectedSlot == null) {
         Get.snackbar(
@@ -243,8 +264,19 @@ class _AppointmentFormState extends State<AppointmentForm> {
         return;
       }
 
+      if (selectedDate == null) {
+        Get.snackbar(
+          'Error',
+          'Please select a date from the availability calendar',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppTheme.error,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
       final formData = AppointmentFormData(
-        appointmentDate: _selectedDate.toIso8601String().split('T')[0],
+        appointmentDate: selectedDate.toIso8601String().split('T')[0],
         startTime: selectedSlot.startTime, // Use selected slot time
         appointmentTypeId: _selectedTypeId,
         notes: _notesController.text.trim(),

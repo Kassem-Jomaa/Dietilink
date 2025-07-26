@@ -364,56 +364,56 @@ class DayTimeSlotsWidget extends GetView<AvailabilityController> {
                 size: 18,
               ),
               const SizedBox(width: 8),
-              Text(
-                period,
-                style: Get.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: periodInfo.color,
-                ),
-              ),
-              const SizedBox(width: 8),
               Expanded(
-                child: Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: periodInfo.color.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(1),
+                child: Text(
+                  period,
+                  style: Get.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: periodInfo.color,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
               // Available slots count
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.success.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$availableSlots available',
-                  style: Get.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.success,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
+              Flexible(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.success.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$availableSlots',
+                    style: Get.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.success,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
               if (bookedSlots > 0) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 // Booked slots count
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.error.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$bookedSlots booked',
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.error,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$bookedSlots',
+                      style: Get.textTheme.bodySmall?.copyWith(
+                        color: AppTheme.error,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),

@@ -62,6 +62,3 @@ flutter test
 - Update module-level README files when adding or changing features.
 
 ## License
-Specify a license (e.g. MIT) or confirm project owner preference.
-
-<!-- End of file -->

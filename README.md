@@ -1,3 +1,12 @@
+<img width="610" height="914" alt="Screenshot 2025-07-12 232807" src="https://github.com/user-attachments/assets/f4c67f28-8eaf-4640-a15e-5dd2acc2b28c" />
+<img width="611" height="903" alt="Screenshot 2025-07-12 232849" src="https://github.com/user-attachments/assets/a7555258-fc5c-4b76-bb06-e439491c1d6d" />
+<img width="592" height="747" alt="Screenshot 2025-07-12 234219" src="https://github.com/user-attachments/assets/2eac123f-6b42-4352-84cb-17f787e2fc7f" />
+<img width="608" height="902" alt="Screenshot 2025-07-12 234544" src="https://github.com/user-attachments/assets/e80b806c-a450-458a-b449-b3ac4214cadd" />
+
+
+
+
+
 # DietiLink (healthy)
 
 A Flutter-based health & nutrition client app (DietiLink) — mobile + web — with modules for Profile, Meal Plans, Progress tracking, Appointments and an AI-powered Chatbot.
